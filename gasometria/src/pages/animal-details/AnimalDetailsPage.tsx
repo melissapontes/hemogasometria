@@ -371,6 +371,7 @@ export function AnimalDetailsPage() {
   const [isSavingReviewedExam, setIsSavingReviewedExam] = useState(false)
   const [activeExamTab, setActiveExamTab] = useState<ExamCardTab>('extracoes')
   const extractedHco3 = extractedValues?.hco3 ?? null
+  const extractedPco2 = extractedValues?.pco2 ?? null
   const extractedNa = extractedValues?.na ?? null
   const extractedCloro = extractedValues?.cloro ?? null
   const extractedPh = extractedValues?.ph ?? null
@@ -386,6 +387,16 @@ export function AnimalDetailsPage() {
     correctedChlorideFormula && extractedNa !== null && extractedCloro !== null && extractedNa !== 0
       ? extractedCloro * (correctedChlorideFormula.divisor / extractedNa)
       : null
+  const pco2DisorderStatus =
+    extractedPco2 === null
+      ? 'Nao calculado (pCO2 do paciente nao encontrado).'
+      : expectedPco2Min === null || expectedPco2Max === null
+        ? 'Nao calculado (pCO2 esperada nao disponivel).'
+        : extractedPco2 >= expectedPco2Min && extractedPco2 <= expectedPco2Max
+          ? 'Disturbio simples'
+          : extractedPco2 > expectedPco2Max
+            ? 'Disturbio misto'
+            : 'Fora da faixa esperada'
   const phStatus =
     extractedPh === null
       ? 'Nao calculado (pH nao encontrado).'
@@ -820,56 +831,53 @@ export function AnimalDetailsPage() {
                 ) : (
                   <div className="mt-3 space-y-3">
                     <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
-                        Relacao pH x referencia
-                      </p>
-                      <p className="mt-1 text-sm text-slate-800">
-                        Regra: pH abaixo da referencia = Acidose, pH acima da referencia = Alcalose
-                      </p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Estado acido-basico</p>
                       <p className="mt-1 text-sm text-slate-900">
-                        pH: {extractedPh === null ? 'Nao encontrado' : extractedPh}
+                        Resultado: {extractedPh === null ? 'Nao encontrado' : extractedPh}
                       </p>
-                      <p className="text-sm text-slate-900">Faixa de referencia: {formatReferenceValue(phReference)}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{phStatus}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">Interpretacao: {phStatus}</p>
                     </div>
 
                     <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">pCO2 esperada</p>
-                      <p className="mt-1 text-sm text-slate-800">Formula: 1,5 x HCO3 + 8 (+/- 2)</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">pCO2 compensatoria</p>
                       {expectedPco2Base === null || expectedPco2Min === null || expectedPco2Max === null ? (
                         <p className="mt-1 text-sm font-semibold text-slate-900">
                           Nao calculada (HCO3 nao encontrado).
                         </p>
                       ) : (
                         <p className="mt-1 text-sm font-semibold text-slate-900">
-                          {formatExamValue(expectedPco2Min)} a {formatExamValue(expectedPco2Max)}
+                          Resultado esperado: {formatExamValue(expectedPco2Min)} a {formatExamValue(expectedPco2Max)}
                         </p>
                       )}
+                      <p className="mt-1 text-sm text-slate-900">
+                        Resultado paciente: {extractedPco2 === null ? 'Nao encontrado' : extractedPco2}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">Interpretacao: {pco2DisorderStatus}</p>
                     </div>
 
                     <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
                       <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
                         Cloro corrigido (mEq/L)
                       </p>
-                      <p className="mt-1 text-sm text-slate-800">
-                        {correctedChlorideFormula
-                          ? `Formula (${correctedChlorideFormula.speciesLabel}): Cloro x (${correctedChlorideFormula.divisor}/Na)`
-                          : 'Formula nao disponivel para esta especie.'}
-                      </p>
                       {!correctedChlorideFormula ? (
                         <p className="mt-1 text-sm font-semibold text-slate-900">
-                          Nao calculado (especie sem formula configurada).
+                          Interpretacao: Nao calculado (especie sem formula configurada).
                         </p>
                       ) : extractedCloro === null || extractedNa === null ? (
                         <p className="mt-1 text-sm font-semibold text-slate-900">
-                          Nao calculado (Na ou Cloro nao encontrado).
+                          Interpretacao: Nao calculado (Na ou Cloro nao encontrado).
                         </p>
                       ) : extractedNa === 0 ? (
-                        <p className="mt-1 text-sm font-semibold text-slate-900">Nao calculado (Na igual a 0).</p>
-                      ) : (
                         <p className="mt-1 text-sm font-semibold text-slate-900">
-                          {formatExamValue(correctedChlorideValue ?? 0)}
+                          Interpretacao: Nao calculado (Na igual a 0).
                         </p>
+                      ) : (
+                        <>
+                          <p className="mt-1 text-sm text-slate-900">
+                            Resultado: {formatExamValue(correctedChlorideValue ?? 0)}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">Interpretacao: Calculado com sucesso</p>
+                        </>
                       )}
                     </div>
                   </div>
