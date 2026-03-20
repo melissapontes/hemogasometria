@@ -12,28 +12,42 @@ type RequestPayload = {
   fileBase64?: string
 }
 
-type ExtractedExamValues = {
-  ph: number | null
-  pco2: number | null
-  po2: number | null
-  be: number | null
-  hco3: number | null
-  tco2: number | null
-  so2: number | null
-  na: number | null
-  k: number | null
-  ica: number | null
-  glicose: number | null
-  hematocrito: number | null
-  hemoglobina: number | null
-  temperatura: number | null
-  cloro: number | null
+const FIELD_KEYS = [
+  'ph',
+  'pco2',
+  'po2',
+  'be',
+  'hco3',
+  'tco2',
+  'so2',
+  'na',
+  'k',
+  'ica',
+  'glicose',
+  'hematocrito',
+  'hemoglobina',
+  'temperatura',
+  'cloro',
+] as const
+
+type ExamFieldKey = (typeof FIELD_KEYS)[number]
+
+type ExtractedExamValues = Record<ExamFieldKey, number | null>
+
+type ReferenceRange = {
+  raw: string | null
+  min: number | null
+  max: number | null
 }
+
+type ExtractedExamReferences = Record<ExamFieldKey, ReferenceRange>
 
 const FIXED_PROMPT = `
 Voce e um sistema de extracao de dados clinicos especializado em exames laboratoriais.
 
-Sua unica funcao e identificar e extrair valores numericos especificos de um exame.
+Sua unica funcao e identificar e extrair, para cada parametro solicitado:
+1) valor do Resultado
+2) valor de Referencia da maquina (coluna Ref/Rel)
 
 REGRAS CRITICAS:
 - NAO interpretar
@@ -43,6 +57,7 @@ REGRAS CRITICAS:
 - NAO retornar nada alem do JSON
 - Se um valor nao estiver presente, retornar null
 - Nunca inventar dados
+- Nunca misturar Resultado com Referencia
 
 EXTRAIR APENAS OS SEGUINTES PARAMETROS:
 - pH
@@ -79,14 +94,54 @@ REGRAS DE IDENTIFICACAO:
 - Cloro -> "Cl", "Cloro", "Cloreto", "Chloride"
 
 REGRAS DE EXTRACAO:
-- Extrair APENAS o numero (sem unidade)
+- Resultado: extrair APENAS o numero (sem unidade)
 - Converter virgula para ponto (ex: 7,35 -> 7.35)
 - Nao incluir texto junto do numero
-- Se houver multiplos valores para o mesmo parametro, pegar o mais recente/mais evidente
+- Referencia: extrair da coluna Ref/Rel do MESMO parametro
+- Em referencia, retornar:
+  - raw: texto da referencia (ex: "33.0-50.0")
+  - min: limite inferior quando existir
+  - max: limite superior quando existir
+- Se referencia vier com formato diferente (ex: ">95"), manter raw e preencher min/max apenas quando claro
 
 FORMATO DE SAIDA OBRIGATORIO:
-Retorne APENAS um JSON valido com as chaves:
-ph, pco2, po2, be, hco3, tco2, so2, na, k, ica, glicose, hematocrito, hemoglobina, temperatura, cloro
+Retorne APENAS um JSON valido com este formato:
+{
+  "extracted": {
+    "ph": number|null,
+    "pco2": number|null,
+    "po2": number|null,
+    "be": number|null,
+    "hco3": number|null,
+    "tco2": number|null,
+    "so2": number|null,
+    "na": number|null,
+    "k": number|null,
+    "ica": number|null,
+    "glicose": number|null,
+    "hematocrito": number|null,
+    "hemoglobina": number|null,
+    "temperatura": number|null,
+    "cloro": number|null
+  },
+  "references": {
+    "ph": { "raw": string|null, "min": number|null, "max": number|null },
+    "pco2": { "raw": string|null, "min": number|null, "max": number|null },
+    "po2": { "raw": string|null, "min": number|null, "max": number|null },
+    "be": { "raw": string|null, "min": number|null, "max": number|null },
+    "hco3": { "raw": string|null, "min": number|null, "max": number|null },
+    "tco2": { "raw": string|null, "min": number|null, "max": number|null },
+    "so2": { "raw": string|null, "min": number|null, "max": number|null },
+    "na": { "raw": string|null, "min": number|null, "max": number|null },
+    "k": { "raw": string|null, "min": number|null, "max": number|null },
+    "ica": { "raw": string|null, "min": number|null, "max": number|null },
+    "glicose": { "raw": string|null, "min": number|null, "max": number|null },
+    "hematocrito": { "raw": string|null, "min": number|null, "max": number|null },
+    "hemoglobina": { "raw": string|null, "min": number|null, "max": number|null },
+    "temperatura": { "raw": string|null, "min": number|null, "max": number|null },
+    "cloro": { "raw": string|null, "min": number|null, "max": number|null }
+  }
+}
 
 PROIBIDO:
 - Retornar texto fora do JSON
@@ -97,29 +152,29 @@ PROIBIDO:
 `.trim()
 
 const RECOVERY_PROMPT = `
-Retorne APENAS um JSON valido e completo com todas as 15 chaves obrigatorias:
-ph, pco2, po2, be, hco3, tco2, so2, na, k, ica, glicose, hematocrito, hemoglobina, temperatura, cloro.
+Retorne APENAS um JSON valido e completo com os objetos obrigatorios "extracted" e "references".
+Em "extracted", inclua as 15 chaves: ph, pco2, po2, be, hco3, tco2, so2, na, k, ica, glicose, hematocrito, hemoglobina, temperatura, cloro.
+Em "references", inclua as mesmas 15 chaves e cada uma com: raw, min, max.
 Se nao encontrar algum valor, use null.
 Nao retorne texto fora do JSON.
 `.trim()
 
-const EMPTY_EXTRACTED_VALUES: ExtractedExamValues = {
-  ph: null,
-  pco2: null,
-  po2: null,
-  be: null,
-  hco3: null,
-  tco2: null,
-  so2: null,
-  na: null,
-  k: null,
-  ica: null,
-  glicose: null,
-  hematocrito: null,
-  hemoglobina: null,
-  temperatura: null,
-  cloro: null,
+const EMPTY_REFERENCE_RANGE: ReferenceRange = {
+  raw: null,
+  min: null,
+  max: null,
 }
+
+function buildEmptyExtractedValues(): ExtractedExamValues {
+  return Object.fromEntries(FIELD_KEYS.map((key) => [key, null])) as ExtractedExamValues
+}
+
+function buildEmptyExtractedReferences(): ExtractedExamReferences {
+  return Object.fromEntries(FIELD_KEYS.map((key) => [key, { ...EMPTY_REFERENCE_RANGE }])) as ExtractedExamReferences
+}
+
+const EMPTY_EXTRACTED_VALUES = buildEmptyExtractedValues()
+const EMPTY_EXTRACTED_REFERENCES = buildEmptyExtractedReferences()
 
 function normalizeNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -135,30 +190,66 @@ function normalizeNumber(value: unknown): number | null {
   return null
 }
 
-function normalizeExtractedValues(raw: unknown): ExtractedExamValues {
+function normalizeReferenceRange(raw: unknown): ReferenceRange {
   const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+  const rawText = typeof input.raw === 'string' ? input.raw.trim() : ''
 
   return {
-    ph: normalizeNumber(input.ph),
-    pco2: normalizeNumber(input.pco2),
-    po2: normalizeNumber(input.po2),
-    be: normalizeNumber(input.be),
-    hco3: normalizeNumber(input.hco3),
-    tco2: normalizeNumber(input.tco2),
-    so2: normalizeNumber(input.so2),
-    na: normalizeNumber(input.na),
-    k: normalizeNumber(input.k),
-    ica: normalizeNumber(input.ica),
-    glicose: normalizeNumber(input.glicose),
-    hematocrito: normalizeNumber(input.hematocrito),
-    hemoglobina: normalizeNumber(input.hemoglobina),
-    temperatura: normalizeNumber(input.temperatura),
-    cloro: normalizeNumber(input.cloro),
+    raw: rawText ? rawText : null,
+    min: normalizeNumber(input.min),
+    max: normalizeNumber(input.max),
   }
 }
 
+function normalizeExtractedValues(raw: unknown): ExtractedExamValues {
+  const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+  const values = buildEmptyExtractedValues()
+
+  for (const key of FIELD_KEYS) {
+    values[key] = normalizeNumber(input[key])
+  }
+
+  return values
+}
+
+function normalizeExtractedReferences(raw: unknown): ExtractedExamReferences {
+  const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+  const references = buildEmptyExtractedReferences()
+
+  for (const key of FIELD_KEYS) {
+    references[key] = normalizeReferenceRange(input[key])
+  }
+
+  return references
+}
+
 function countExtractedValues(values: ExtractedExamValues): number {
-  return Object.values(values).filter((value) => value !== null).length
+  let count = 0
+
+  for (const key of FIELD_KEYS) {
+    if (values[key] !== null) {
+      count += 1
+    }
+  }
+
+  return count
+}
+
+function countExtractedReferences(references: ExtractedExamReferences): number {
+  let count = 0
+
+  for (const key of FIELD_KEYS) {
+    const range = references[key]
+    if (range.raw !== null || range.min !== null || range.max !== null) {
+      count += 1
+    }
+  }
+
+  return count
+}
+
+function buildQualityScore(values: ExtractedExamValues, references: ExtractedExamReferences): number {
+  return countExtractedValues(values) * 3 + countExtractedReferences(references)
 }
 
 function parseGeminiJson(rawText: string): Record<string, unknown> {
@@ -180,7 +271,7 @@ function parseGeminiJson(rawText: string): Record<string, unknown> {
       try {
         return JSON.parse(`${trimmed}}`) as Record<string, unknown>
       } catch {
-        // continua para outras estrategias
+        // segue para outras estrategias
       }
     }
 
@@ -191,11 +282,10 @@ function parseGeminiJson(rawText: string): Record<string, unknown> {
       try {
         return JSON.parse(possibleJson) as Record<string, unknown>
       } catch {
-        // continua para outras estrategias
+        // segue para outras estrategias
       }
     }
 
-    // Caso comum observado: resposta vem como pares soltos, ex: `"ph": 7.29`
     if (!trimmed.startsWith('{') && trimmed.includes(':')) {
       const wrapped = `{${trimmed}}`
       try {
@@ -205,12 +295,11 @@ function parseGeminiJson(rawText: string): Record<string, unknown> {
         try {
           return JSON.parse(withoutTrailingComma) as Record<string, unknown>
         } catch {
-          // continua para fallback final
+          // segue para fallback final
         }
       }
     }
 
-    // Fallback: tenta extrair pares "chave": numero/null mesmo com JSON truncado.
     const pairRegex = /"([a-zA-Z0-9_]+)"\s*:\s*(-?\d+(?:[.,]\d+)?|null)/g
     const extracted: Record<string, unknown> = {}
     let match: RegExpExecArray | null = null
@@ -236,6 +325,41 @@ function parseGeminiJson(rawText: string): Record<string, unknown> {
   }
 
   return {}
+}
+
+function buildResponseSchema() {
+  const extractedProperties = Object.fromEntries(
+    FIELD_KEYS.map((key) => [key, { type: 'NUMBER', nullable: true }]),
+  )
+
+  const rangeSchema = {
+    type: 'OBJECT',
+    properties: {
+      raw: { type: 'STRING', nullable: true },
+      min: { type: 'NUMBER', nullable: true },
+      max: { type: 'NUMBER', nullable: true },
+    },
+    required: ['raw', 'min', 'max'],
+  }
+
+  const referencesProperties = Object.fromEntries(FIELD_KEYS.map((key) => [key, rangeSchema]))
+
+  return {
+    type: 'OBJECT',
+    properties: {
+      extracted: {
+        type: 'OBJECT',
+        properties: extractedProperties,
+        required: [...FIELD_KEYS],
+      },
+      references: {
+        type: 'OBJECT',
+        properties: referencesProperties,
+        required: [...FIELD_KEYS],
+      },
+    },
+    required: ['extracted', 'references'],
+  }
 }
 
 serve(async (request) => {
@@ -271,46 +395,10 @@ Arquivo: ${body.fileName ?? 'nao informado'}
 `.trim()
 
     const generationConfig = {
-      maxOutputTokens: 1024,
+      maxOutputTokens: 4096,
       temperature: 0,
       responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'OBJECT',
-        properties: {
-          ph: { type: 'NUMBER', nullable: true },
-          pco2: { type: 'NUMBER', nullable: true },
-          po2: { type: 'NUMBER', nullable: true },
-          be: { type: 'NUMBER', nullable: true },
-          hco3: { type: 'NUMBER', nullable: true },
-          tco2: { type: 'NUMBER', nullable: true },
-          so2: { type: 'NUMBER', nullable: true },
-          na: { type: 'NUMBER', nullable: true },
-          k: { type: 'NUMBER', nullable: true },
-          ica: { type: 'NUMBER', nullable: true },
-          glicose: { type: 'NUMBER', nullable: true },
-          hematocrito: { type: 'NUMBER', nullable: true },
-          hemoglobina: { type: 'NUMBER', nullable: true },
-          temperatura: { type: 'NUMBER', nullable: true },
-          cloro: { type: 'NUMBER', nullable: true },
-        },
-        required: [
-          'ph',
-          'pco2',
-          'po2',
-          'be',
-          'hco3',
-          'tco2',
-          'so2',
-          'na',
-          'k',
-          'ica',
-          'glicose',
-          'hematocrito',
-          'hemoglobina',
-          'temperatura',
-          'cloro',
-        ],
-      },
+      responseSchema: buildResponseSchema(),
     }
 
     async function callGemini(promptText: string) {
@@ -367,6 +455,7 @@ Arquivo: ${body.fileName ?? 'nao informado'}
       return new Response(
         JSON.stringify({
           extracted: EMPTY_EXTRACTED_VALUES,
+          references: EMPTY_EXTRACTED_REFERENCES,
           debug: {
             rawText: '',
             parsed: {},
@@ -380,10 +469,22 @@ Arquivo: ${body.fileName ?? 'nao informado'}
     }
 
     let parsed = parseGeminiJson(rawText)
-    let extracted = normalizeExtractedValues(parsed)
+    let extractedSource: unknown = parsed
+    let referencesSource: unknown = {}
+
+    if (typeof parsed.extracted !== 'undefined') {
+      extractedSource = parsed.extracted
+    }
+
+    if (typeof parsed.references !== 'undefined') {
+      referencesSource = parsed.references
+    }
+
+    let extracted = normalizeExtractedValues(extractedSource)
+    let references = normalizeExtractedReferences(referencesSource)
 
     const shouldRetry =
-      countExtractedValues(extracted) <= 1 ||
+      buildQualityScore(extracted, references) <= 4 ||
       (rawText.startsWith('{') && !rawText.endsWith('}')) ||
       finishReason === 'MAX_TOKENS'
 
@@ -400,12 +501,25 @@ Arquivo: ${body.fileName ?? 'nao informado'}
           .trim()
 
         const retryParsed = parseGeminiJson(retryRawText)
-        const retryExtracted = normalizeExtractedValues(retryParsed)
+        let retryExtractedSource: unknown = retryParsed
+        let retryReferencesSource: unknown = {}
 
-        if (countExtractedValues(retryExtracted) > countExtractedValues(extracted)) {
+        if (typeof retryParsed.extracted !== 'undefined') {
+          retryExtractedSource = retryParsed.extracted
+        }
+
+        if (typeof retryParsed.references !== 'undefined') {
+          retryReferencesSource = retryParsed.references
+        }
+
+        const retryExtracted = normalizeExtractedValues(retryExtractedSource)
+        const retryReferences = normalizeExtractedReferences(retryReferencesSource)
+
+        if (buildQualityScore(retryExtracted, retryReferences) > buildQualityScore(extracted, references)) {
           rawText = retryRawText || rawText
           parsed = retryParsed
           extracted = retryExtracted
+          references = retryReferences
           finishReason = retryData?.candidates?.[0]?.finishReason ?? finishReason
         }
       }
@@ -414,11 +528,13 @@ Arquivo: ${body.fileName ?? 'nao informado'}
     return new Response(
       JSON.stringify({
         extracted,
+        references,
         debug: {
           rawText,
           parsed,
           finishReason,
           extractedCount: countExtractedValues(extracted),
+          referencesCount: countExtractedReferences(references),
         },
       }),
       {

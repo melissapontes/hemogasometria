@@ -37,8 +37,18 @@ type ExtractedExamValues = {
 type ExtractedExamValueKey = keyof ExtractedExamValues
 type ExtractedExamDraftValues = Record<ExtractedExamValueKey, string>
 
+type ReferenceRange = {
+  raw: string | null
+  min: number | null
+  max: number | null
+}
+
+type ExtractedExamReferences = Record<ExtractedExamValueKey, ReferenceRange>
+type ExamCardTab = 'extracoes' | 'calculos'
+
 type LatestExamRecord = {
   extractedValues: ExtractedExamValues
+  extractedReferences: ExtractedExamReferences
   updatedAt: string
   sourceFileName: string | null
 }
@@ -59,6 +69,30 @@ const EMPTY_EXTRACTED_VALUES: ExtractedExamValues = {
   hemoglobina: null,
   temperatura: null,
   cloro: null,
+}
+
+const EMPTY_REFERENCE_RANGE: ReferenceRange = {
+  raw: null,
+  min: null,
+  max: null,
+}
+
+const EMPTY_EXTRACTED_REFERENCES: ExtractedExamReferences = {
+  ph: { ...EMPTY_REFERENCE_RANGE },
+  pco2: { ...EMPTY_REFERENCE_RANGE },
+  po2: { ...EMPTY_REFERENCE_RANGE },
+  be: { ...EMPTY_REFERENCE_RANGE },
+  hco3: { ...EMPTY_REFERENCE_RANGE },
+  tco2: { ...EMPTY_REFERENCE_RANGE },
+  so2: { ...EMPTY_REFERENCE_RANGE },
+  na: { ...EMPTY_REFERENCE_RANGE },
+  k: { ...EMPTY_REFERENCE_RANGE },
+  ica: { ...EMPTY_REFERENCE_RANGE },
+  glicose: { ...EMPTY_REFERENCE_RANGE },
+  hematocrito: { ...EMPTY_REFERENCE_RANGE },
+  hemoglobina: { ...EMPTY_REFERENCE_RANGE },
+  temperatura: { ...EMPTY_REFERENCE_RANGE },
+  cloro: { ...EMPTY_REFERENCE_RANGE },
 }
 
 const EXAM_PARAMETER_FIELDS: Array<{ key: ExtractedExamValueKey; label: string }> = [
@@ -175,6 +209,53 @@ function normalizeExtractedValues(raw: unknown): ExtractedExamValues {
   }
 }
 
+function normalizeReferenceRange(raw: unknown): ReferenceRange {
+  const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+  const rawValue = typeof input.raw === 'string' ? input.raw.trim() : ''
+
+  return {
+    raw: rawValue || null,
+    min: normalizeNumber(input.min),
+    max: normalizeNumber(input.max),
+  }
+}
+
+function normalizeExtractedReferences(raw: unknown): ExtractedExamReferences {
+  const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+
+  return {
+    ph: normalizeReferenceRange(input.ph),
+    pco2: normalizeReferenceRange(input.pco2),
+    po2: normalizeReferenceRange(input.po2),
+    be: normalizeReferenceRange(input.be),
+    hco3: normalizeReferenceRange(input.hco3),
+    tco2: normalizeReferenceRange(input.tco2),
+    so2: normalizeReferenceRange(input.so2),
+    na: normalizeReferenceRange(input.na),
+    k: normalizeReferenceRange(input.k),
+    ica: normalizeReferenceRange(input.ica),
+    glicose: normalizeReferenceRange(input.glicose),
+    hematocrito: normalizeReferenceRange(input.hematocrito),
+    hemoglobina: normalizeReferenceRange(input.hemoglobina),
+    temperatura: normalizeReferenceRange(input.temperatura),
+    cloro: normalizeReferenceRange(input.cloro),
+  }
+}
+
+function normalizeExamPayload(raw: unknown): {
+  values: ExtractedExamValues
+  references: ExtractedExamReferences
+} {
+  const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+  const extractedSource = typeof input.extracted !== 'undefined' ? input.extracted : input
+  const referencesSource = input.references
+
+  return {
+    values: normalizeExtractedValues(extractedSource),
+    references: normalizeExtractedReferences(referencesSource),
+  }
+}
+
 function formatDateTime(value: string): string {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) {
@@ -182,6 +263,86 @@ function formatDateTime(value: string): string {
   }
 
   return parsed.toLocaleString('pt-BR')
+}
+
+function formatExamValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+function formatReferenceValue(reference: ReferenceRange): string {
+  if (reference.raw) {
+    return reference.raw
+  }
+
+  if (reference.min !== null && reference.max !== null) {
+    return `${formatExamValue(reference.min)}-${formatExamValue(reference.max)}`
+  }
+
+  if (reference.min !== null) {
+    return `>= ${formatExamValue(reference.min)}`
+  }
+
+  if (reference.max !== null) {
+    return `<= ${formatExamValue(reference.max)}`
+  }
+
+  return 'Nao encontrado'
+}
+
+function resolveReferenceBounds(reference: ReferenceRange): { min: number | null; max: number | null } {
+  if (reference.min !== null || reference.max !== null) {
+    return { min: reference.min, max: reference.max }
+  }
+
+  if (!reference.raw) {
+    return { min: null, max: null }
+  }
+
+  const normalized = reference.raw.replace(',', '.').replace(/\s/g, '')
+  const intervalMatch = normalized.match(/(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)/)
+
+  if (!intervalMatch) {
+    return { min: null, max: null }
+  }
+
+  const min = Number(intervalMatch[1])
+  const max = Number(intervalMatch[2])
+
+  return {
+    min: Number.isFinite(min) ? min : null,
+    max: Number.isFinite(max) ? max : null,
+  }
+}
+
+function normalizeAnimalTypeName(value: string): string {
+  return value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+type CorrectedChlorideFormula = {
+  speciesLabel: string
+  divisor: number
+}
+
+function getCorrectedChlorideFormula(animalTypeName: string | null): CorrectedChlorideFormula | null {
+  if (!animalTypeName) {
+    return null
+  }
+
+  const normalizedName = normalizeAnimalTypeName(animalTypeName)
+
+  if (normalizedName === 'cao') {
+    return { speciesLabel: 'Cao', divisor: 146 }
+  }
+
+  if (normalizedName === 'gato') {
+    return { speciesLabel: 'Gato', divisor: 156 }
+  }
+
+  if (normalizedName === 'cavalo') {
+    return { speciesLabel: 'Cavalo', divisor: 104 }
+  }
+
+  return null
 }
 
 export function AnimalDetailsPage() {
@@ -195,13 +356,46 @@ export function AnimalDetailsPage() {
   const [fileError, setFileError] = useState<string | null>(null)
   const [isSendingToAi, setIsSendingToAi] = useState(false)
   const [extractedValues, setExtractedValues] = useState<ExtractedExamValues | null>(null)
+  const [extractedReferences, setExtractedReferences] = useState<ExtractedExamReferences>(
+    EMPTY_EXTRACTED_REFERENCES,
+  )
   const [latestExam, setLatestExam] = useState<LatestExamRecord | null>(null)
   const [pendingReviewValues, setPendingReviewValues] = useState<ExtractedExamValues | null>(null)
+  const [pendingReviewReferences, setPendingReviewReferences] = useState<ExtractedExamReferences>(
+    EMPTY_EXTRACTED_REFERENCES,
+  )
   const [pendingSourceFileName, setPendingSourceFileName] = useState<string | null>(null)
   const [reviewDraftValues, setReviewDraftValues] =
     useState<ExtractedExamDraftValues>(buildDraftValues(EMPTY_EXTRACTED_VALUES))
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [isSavingReviewedExam, setIsSavingReviewedExam] = useState(false)
+  const [activeExamTab, setActiveExamTab] = useState<ExamCardTab>('extracoes')
+  const extractedHco3 = extractedValues?.hco3 ?? null
+  const extractedNa = extractedValues?.na ?? null
+  const extractedCloro = extractedValues?.cloro ?? null
+  const extractedPh = extractedValues?.ph ?? null
+  const phReference = extractedReferences.ph
+  const phReferenceBounds = resolveReferenceBounds(phReference)
+  const correctedChlorideFormula = getCorrectedChlorideFormula(
+    animal ? getAnimalTypeName(animal.animal_types) : null,
+  )
+  const expectedPco2Base = extractedHco3 !== null ? 1.5 * extractedHco3 + 8 : null
+  const expectedPco2Min = expectedPco2Base !== null ? expectedPco2Base - 2 : null
+  const expectedPco2Max = expectedPco2Base !== null ? expectedPco2Base + 2 : null
+  const correctedChlorideValue =
+    correctedChlorideFormula && extractedNa !== null && extractedCloro !== null && extractedNa !== 0
+      ? extractedCloro * (correctedChlorideFormula.divisor / extractedNa)
+      : null
+  const phStatus =
+    extractedPh === null
+      ? 'Nao calculado (pH nao encontrado).'
+      : phReferenceBounds.min === null && phReferenceBounds.max === null
+        ? 'Nao calculado (faixa de referencia do pH nao encontrada).'
+        : phReferenceBounds.min !== null && extractedPh < phReferenceBounds.min
+          ? 'Acidose'
+          : phReferenceBounds.max !== null && extractedPh > phReferenceBounds.max
+            ? 'Alcalose'
+            : 'Dentro da faixa de referencia'
 
   useEffect(() => {
     void loadAnimal()
@@ -274,6 +468,8 @@ export function AnimalDetailsPage() {
   async function loadLatestExam() {
     if (!animalId || !user) {
       setLatestExam(null)
+      setExtractedValues(null)
+      setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
       return
     }
 
@@ -285,25 +481,35 @@ export function AnimalDetailsPage() {
 
     if (error) {
       setLatestExam(null)
+      setExtractedValues(null)
+      setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
       return
     }
 
     if (!data) {
       setLatestExam(null)
+      setExtractedValues(null)
+      setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
       return
     }
 
-    const normalizedValues = normalizeExtractedValues(data.extracted_values)
+    const normalizedExam = normalizeExamPayload(data.extracted_values)
 
     setLatestExam({
-      extractedValues: normalizedValues,
+      extractedValues: normalizedExam.values,
+      extractedReferences: normalizedExam.references,
       updatedAt: data.updated_at,
       sourceFileName: data.source_file_name ?? null,
     })
-    setExtractedValues(normalizedValues)
+    setExtractedValues(normalizedExam.values)
+    setExtractedReferences(normalizedExam.references)
   }
 
-  async function saveLatestExam(values: ExtractedExamValues, sourceFileName: string | null) {
+  async function saveLatestExam(
+    values: ExtractedExamValues,
+    references: ExtractedExamReferences,
+    sourceFileName: string | null,
+  ) {
     if (!animalId || !user) {
       return
     }
@@ -312,7 +518,10 @@ export function AnimalDetailsPage() {
       animal_id: animalId,
       user_id: user.id,
       source_file_name: sourceFileName,
-      extracted_values: values,
+      extracted_values: {
+        extracted: values,
+        references,
+      },
       updated_at: new Date().toISOString(),
     }
 
@@ -328,6 +537,7 @@ export function AnimalDetailsPage() {
 
     setLatestExam({
       extractedValues: values,
+      extractedReferences: references,
       updatedAt: data.updated_at,
       sourceFileName: data.source_file_name ?? null,
     })
@@ -336,6 +546,7 @@ export function AnimalDetailsPage() {
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
     setPendingReviewValues(null)
+    setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
     setPendingSourceFileName(null)
     setReviewError(null)
     setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
@@ -396,6 +607,7 @@ export function AnimalDetailsPage() {
 
     setFileError(null)
     setPendingReviewValues(null)
+    setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
     setPendingSourceFileName(null)
     setReviewError(null)
     setIsSendingToAi(true)
@@ -434,7 +646,9 @@ export function AnimalDetailsPage() {
       }
 
       const normalizedValues = normalizeExtractedValues(data?.extracted ?? EMPTY_EXTRACTED_VALUES)
+      const normalizedReferences = normalizeExtractedReferences(data?.references ?? EMPTY_EXTRACTED_REFERENCES)
       setPendingReviewValues(normalizedValues)
+      setPendingReviewReferences(normalizedReferences)
       setPendingSourceFileName(selectedFile.name)
       setReviewDraftValues(buildDraftValues(normalizedValues))
     } catch (error) {
@@ -468,9 +682,11 @@ export function AnimalDetailsPage() {
     setIsSavingReviewedExam(true)
 
     try {
-      await saveLatestExam(values, pendingSourceFileName)
+      await saveLatestExam(values, pendingReviewReferences, pendingSourceFileName)
       setExtractedValues(values)
+      setExtractedReferences(pendingReviewReferences)
       setPendingReviewValues(null)
+      setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
       setPendingSourceFileName(null)
       setSelectedFile(null)
       setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
@@ -484,6 +700,7 @@ export function AnimalDetailsPage() {
 
   function handleCancelReview() {
     setPendingReviewValues(null)
+    setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
     setPendingSourceFileName(null)
     setReviewError(null)
     setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
@@ -556,16 +773,107 @@ export function AnimalDetailsPage() {
                     {latestExam.sourceFileName ? ` - arquivo: ${latestExam.sourceFileName}` : ''}
                   </p>
                 ) : null}
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {EXAM_PARAMETER_FIELDS.map((field) => (
-                    <div key={field.key} className="rounded-xl border border-emerald-200 bg-white px-3 py-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{field.label}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {extractedValues[field.key] === null ? 'Nao encontrado' : extractedValues[field.key]}
-                      </p>
-                    </div>
-                  ))}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveExamTab('extracoes')}
+                    className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
+                      activeExamTab === 'extracoes'
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : 'border-emerald-300 bg-white text-emerald-800'
+                    }`}
+                  >
+                    Extracoes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveExamTab('calculos')}
+                    className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
+                      activeExamTab === 'calculos'
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : 'border-emerald-300 bg-white text-emerald-800'
+                    }`}
+                  >
+                    Calculos e relacoes
+                  </button>
                 </div>
+
+                {activeExamTab === 'extracoes' ? (
+                  <ul className="mt-3 space-y-2">
+                    {EXAM_PARAMETER_FIELDS.map((field) => (
+                      <li
+                        key={field.key}
+                        className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
+                      >
+                        <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{field.label}</p>
+                        <p className="mt-1">
+                          <span className="font-semibold">Resultado:</span>{' '}
+                          {extractedValues[field.key] === null ? 'Nao encontrado' : extractedValues[field.key]}
+                        </p>
+                        <p>
+                          <span className="font-semibold">Ref:</span>{' '}
+                          {formatReferenceValue(extractedReferences[field.key])}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="mt-3 space-y-3">
+                    <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
+                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
+                        Relacao pH x referencia
+                      </p>
+                      <p className="mt-1 text-sm text-slate-800">
+                        Regra: pH abaixo da referencia = Acidose, pH acima da referencia = Alcalose
+                      </p>
+                      <p className="mt-1 text-sm text-slate-900">
+                        pH: {extractedPh === null ? 'Nao encontrado' : extractedPh}
+                      </p>
+                      <p className="text-sm text-slate-900">Faixa de referencia: {formatReferenceValue(phReference)}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900">{phStatus}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
+                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">pCO2 esperada</p>
+                      <p className="mt-1 text-sm text-slate-800">Formula: 1,5 x HCO3 + 8 (+/- 2)</p>
+                      {expectedPco2Base === null || expectedPco2Min === null || expectedPco2Max === null ? (
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          Nao calculada (HCO3 nao encontrado).
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {formatExamValue(expectedPco2Min)} a {formatExamValue(expectedPco2Max)}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
+                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
+                        Cloro corrigido (mEq/L)
+                      </p>
+                      <p className="mt-1 text-sm text-slate-800">
+                        {correctedChlorideFormula
+                          ? `Formula (${correctedChlorideFormula.speciesLabel}): Cloro x (${correctedChlorideFormula.divisor}/Na)`
+                          : 'Formula nao disponivel para esta especie.'}
+                      </p>
+                      {!correctedChlorideFormula ? (
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          Nao calculado (especie sem formula configurada).
+                        </p>
+                      ) : extractedCloro === null || extractedNa === null ? (
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          Nao calculado (Na ou Cloro nao encontrado).
+                        </p>
+                      ) : extractedNa === 0 ? (
+                        <p className="mt-1 text-sm font-semibold text-slate-900">Nao calculado (Na igual a 0).</p>
+                      ) : (
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {formatExamValue(correctedChlorideValue ?? 0)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : null}
           </section>
@@ -588,23 +896,30 @@ export function AnimalDetailsPage() {
               {pendingSourceFileName ? ` Arquivo: ${pendingSourceFileName}.` : ''}
             </p>
 
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-4 space-y-2">
               {EXAM_PARAMETER_FIELDS.map((field) => (
-                <label
+                <li
                   key={field.key}
-                  className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium uppercase tracking-wide text-amber-700"
+                  className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-slate-900"
                 >
-                  {field.label}
-                  <input
-                    type="text"
-                    value={reviewDraftValues[field.key]}
-                    onChange={(event) => handleReviewValueChange(field.key, event.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-semibold normal-case tracking-normal text-slate-900"
-                    placeholder="Nao encontrado"
-                  />
-                </label>
+                  <p className="text-xs font-medium uppercase tracking-wide text-amber-700">{field.label}</p>
+                  <label className="mt-1 block text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    Resultado
+                    <input
+                      type="text"
+                      value={reviewDraftValues[field.key]}
+                      onChange={(event) => handleReviewValueChange(field.key, event.target.value)}
+                      className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-semibold normal-case tracking-normal text-slate-900"
+                      placeholder="Nao encontrado"
+                    />
+                  </label>
+                  <p className="mt-2">
+                    <span className="font-semibold">Ref:</span>{' '}
+                    {formatReferenceValue(pendingReviewReferences[field.key])}
+                  </p>
+                </li>
               ))}
-            </div>
+            </ul>
 
             {reviewError ? <p className="mt-3 text-sm text-red-700">{reviewError}</p> : null}
 
