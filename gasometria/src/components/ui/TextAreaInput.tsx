@@ -1,12 +1,16 @@
-import type { TextareaHTMLAttributes } from 'react'
+﻿import * as React from 'react'
+import { cn } from '../../lib/utils'
 
-type TextAreaInputProps = TextareaHTMLAttributes<HTMLTextAreaElement>
+export type TextAreaInputProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>
 
-export function TextAreaInput(props: TextAreaInputProps) {
+export function TextAreaInput({ className, ...props }: TextAreaInputProps) {
   return (
     <textarea
+      className={cn(
+        'min-h-24 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200',
+        className,
+      )}
       {...props}
-      className={`min-h-28 w-full resize-y rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${props.className ?? ''}`}
     />
   )
 }

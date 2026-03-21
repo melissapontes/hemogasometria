@@ -1,11 +1,31 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+﻿import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
-import { AlertMessage, Button, PageContainer } from '../../components/ui'
+import {
+  AlertMessage,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  PageContainer,
+  Separator,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  TextInput,
+} from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
 import { supabase } from '../../lib/supabase'
 import type { Animal } from '../../types/animals'
 import { AnimalInfoItem } from './components/AnimalInfoItem'
+import { ParameterRangeBar } from './components/ParameterRangeBar'
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
 const SUPPORTED_MIME_TYPES = new Set([
@@ -718,24 +738,37 @@ export function AnimalDetailsPage() {
   }
 
   return (
-    <PageContainer maxWidthClassName="max-w-5xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Detalhes do animal</h1>
-          <p className="text-sm text-slate-600">Area pronta para adicionar mais funcionalidades em seguida.</p>
-        </div>
+    <PageContainer maxWidthClassName="max-w-4xl">
+      <Card className="mb-4 border border-slate-200 bg-white/95">
+        <CardBody className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Detalhes do animal</h1>
+            <p className="text-sm text-slate-500">Leitura e interpretacao de gasometria em formato de app.</p>
+          </div>
+          <Button onClick={() => navigate('/dashboard')}>Voltar</Button>
+        </CardBody>
+      </Card>
 
-        <Button onClick={() => navigate('/dashboard')}>Voltar</Button>
-      </div>
-
-      {isLoading ? <p className="text-slate-700">Carregando...</p> : null}
+      {isLoading ? (
+        <Card className="mb-4 border border-slate-200 bg-white/95">
+          <CardBody className="flex flex-row items-center gap-3 p-4 text-slate-600">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
+            Carregando...
+          </CardBody>
+        </Card>
+      ) : null}
       {errorMessage ? <AlertMessage message={errorMessage} /> : null}
 
       {!isLoading && !errorMessage && animal ? (
         <div className="space-y-5">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">{animal.nome}</h2>
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className="border border-slate-200 bg-white/95">
+            <CardHeader className="flex flex-col items-start gap-2 p-4 pb-0">
+              <p className="text-2xl font-semibold">{animal.nome}</p>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                {getAnimalTypeName(animal.animal_types)}
+              </span>
+            </CardHeader>
+            <CardBody className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
               <AnimalInfoItem label="Especie" value={getAnimalTypeName(animal.animal_types)} />
               <AnimalInfoItem label="Sexo" value={animal.sexo || 'Nao informado'} />
               <AnimalInfoItem
@@ -745,32 +778,33 @@ export function AnimalDetailsPage() {
               <AnimalInfoItem label="Peso" value={animal.peso_kg ? `${animal.peso_kg} kg` : 'Nao informado'} />
               <AnimalInfoItem label="Observacoes" value={animal.observacoes || 'Sem observacoes'} />
               <AnimalInfoItem label="ID" value={animal.id} breakAll />
-            </div>
-          </section>
+            </CardBody>
+          </Card>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-xl font-semibold text-slate-900">Enviar documento para IA (Gemini)</h3>
-            <p className="mt-1 text-sm text-slate-600">Selecione uma foto ou PDF para analise com prompt fixo.</p>
+          <Card className="border border-slate-200 bg-white/95">
+            <CardHeader className="flex flex-col items-start gap-1 p-4 pb-0">
+              <h3 className="text-lg font-semibold">Enviar documento para IA (Gemini)</h3>
+              <p className="text-sm text-slate-500">Selecione foto ou PDF para extrair os parametros.</p>
+            </CardHeader>
+            <CardBody className="p-4">
+              <form className="space-y-4" onSubmit={handleSendToAi}>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700" htmlFor="animal-document">
+                    Documento (PDF ou imagem)
+                  </label>
+                  <TextInput
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    id="animal-document"
+                    type="file"
+                    onChange={handleFileChange}
+                  />
+                  <p className="text-xs text-slate-500">Tamanho maximo: 10MB.</p>
+                </div>
 
-            <form className="mt-4 space-y-4" onSubmit={handleSendToAi}>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700" htmlFor="animal-document">
-                  Documento (PDF ou imagem)
-                </label>
-                <input
-                  id="animal-document"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                  onChange={handleFileChange}
-                  className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-1.5 file:font-medium hover:file:bg-slate-300"
-                />
-                <p className="mt-1 text-xs text-slate-500">Tamanho maximo: 10MB.</p>
-              </div>
-
-              <Button type="submit" disabled={isSendingToAi}>
-                {isSendingToAi ? 'Enviando...' : 'Enviar para Gemini'}
-              </Button>
-            </form>
+                <Button type="submit" disabled={isSendingToAi}>
+                  {isSendingToAi ? 'Enviando...' : 'Enviar para Gemini'}
+                </Button>
+              </form>
 
             {fileError ? <p className="mt-3 text-sm text-red-700">{fileError}</p> : null}
             {extractedValues ? (
@@ -784,58 +818,60 @@ export function AnimalDetailsPage() {
                     {latestExam.sourceFileName ? ` - arquivo: ${latestExam.sourceFileName}` : ''}
                   </p>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveExamTab('extracoes')}
-                    className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
-                      activeExamTab === 'extracoes'
-                        ? 'border-emerald-600 bg-emerald-600 text-white'
-                        : 'border-emerald-300 bg-white text-emerald-800'
-                    }`}
-                  >
-                    Extracoes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveExamTab('calculos')}
-                    className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
-                      activeExamTab === 'calculos'
-                        ? 'border-emerald-600 bg-emerald-600 text-white'
-                        : 'border-emerald-300 bg-white text-emerald-800'
-                    }`}
-                  >
-                    Calculos e relacoes
-                  </button>
-                </div>
+                <Tabs className="mt-3" value={activeExamTab} onValueChange={(value) => setActiveExamTab(value as ExamCardTab)}>
+                  <TabsList>
+                    <TabsTrigger value="extracoes">Extracoes</TabsTrigger>
+                    <TabsTrigger value="calculos">Calculos e relacoes</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="extracoes">
+                    <ul className="mt-2 space-y-2">
+                    {EXAM_PARAMETER_FIELDS.map((field) => {
+                      const reference = extractedReferences[field.key]
+                      const referenceBounds = resolveReferenceBounds(reference)
+                      const patientValue = extractedValues[field.key]
 
-                {activeExamTab === 'extracoes' ? (
-                  <ul className="mt-3 space-y-2">
-                    {EXAM_PARAMETER_FIELDS.map((field) => (
-                      <li
-                        key={field.key}
-                        className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
-                      >
-                        <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{field.label}</p>
-                        <p className="mt-1">
-                          <span className="font-semibold">Resultado:</span>{' '}
-                          {extractedValues[field.key] === null ? 'Nao encontrado' : extractedValues[field.key]}
-                        </p>
-                        <p>
-                          <span className="font-semibold">Ref:</span>{' '}
-                          {formatReferenceValue(extractedReferences[field.key])}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="mt-3 space-y-3">
+                      return (
+                        <li
+                          key={field.key}
+                          className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        >
+                          <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{field.label}</p>
+                          <p className="mt-1">
+                            <span className="font-semibold">Resultado:</span>{' '}
+                            {patientValue === null ? 'Nao encontrado' : patientValue}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Ref:</span> {formatReferenceValue(reference)}
+                          </p>
+                          <div className="mt-2">
+                            <ParameterRangeBar
+                              label={field.label}
+                              max={referenceBounds.max}
+                              min={referenceBounds.min}
+                              patientValue={patientValue}
+                            />
+                          </div>
+                        </li>
+                      )
+                    })}
+                    </ul>
+                  </TabsContent>
+                  <TabsContent value="calculos">
+                    <div className="mt-2 space-y-3">
                     <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
                       <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Estado acido-basico</p>
                       <p className="mt-1 text-sm text-slate-900">
                         Resultado: {extractedPh === null ? 'Nao encontrado' : extractedPh}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-slate-900">Interpretacao: {phStatus}</p>
+                      <div className="mt-2">
+                        <ParameterRangeBar
+                          label="pH"
+                          max={phReferenceBounds.max}
+                          min={phReferenceBounds.min}
+                          patientValue={extractedPh}
+                        />
+                      </div>
                     </div>
 
                     <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
@@ -853,6 +889,15 @@ export function AnimalDetailsPage() {
                         Resultado paciente: {extractedPco2 === null ? 'Nao encontrado' : extractedPco2}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-slate-900">Interpretacao: {pco2DisorderStatus}</p>
+                      <div className="mt-2">
+                        <ParameterRangeBar
+                          label="pCO2"
+                          max={expectedPco2Max}
+                          min={expectedPco2Min}
+                          patientLabel="Paciente (pCO2)"
+                          patientValue={extractedPco2}
+                        />
+                      </div>
                     </div>
 
                     <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
@@ -880,68 +925,70 @@ export function AnimalDetailsPage() {
                         </>
                       )}
                     </div>
-                  </div>
-                )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             ) : null}
-          </section>
+            </CardBody>
+          </Card>
         </div>
       ) : null}
 
-      <p className="mt-4">
-        <Link className="font-medium text-blue-700 hover:text-blue-800 hover:underline" to="/dashboard">
-          Ir para lista de animais
-        </Link>
-      </p>
+      <Separator className="my-4" />
+      <Link className="text-sm font-medium text-sky-700 hover:underline" to="/dashboard">
+        Ir para lista de animais
+      </Link>
 
-      {pendingReviewValues ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-amber-200 bg-white p-5 shadow-xl">
-            <h4 className="text-lg font-semibold text-amber-900">Revise e edite antes de confirmar</h4>
-            <p className="mt-1 text-sm text-amber-800">
-              Confira os campos extraidos pela IA, ajuste se necessario e confirme para salvar e mostrar no exame
-              principal.
+      <Dialog
+        open={Boolean(pendingReviewValues)}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelReview()
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Revise e edite antes de confirmar</DialogTitle>
+            <DialogDescription>
+              Confira os campos extraidos pela IA, ajuste se necessario e confirme para salvar.
               {pendingSourceFileName ? ` Arquivo: ${pendingSourceFileName}.` : ''}
-            </p>
+            </DialogDescription>
+          </DialogHeader>
 
-            <ul className="mt-4 space-y-2">
+            <ul className="space-y-2">
               {EXAM_PARAMETER_FIELDS.map((field) => (
-                <li
-                  key={field.key}
-                  className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-slate-900"
-                >
+                <li key={field.key} className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm">
                   <p className="text-xs font-medium uppercase tracking-wide text-amber-700">{field.label}</p>
-                  <label className="mt-1 block text-xs font-semibold uppercase tracking-wide text-slate-700">
-                    Resultado
-                    <input
-                      type="text"
-                      value={reviewDraftValues[field.key]}
-                      onChange={(event) => handleReviewValueChange(field.key, event.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-semibold normal-case tracking-normal text-slate-900"
-                      placeholder="Nao encontrado"
+                  <div className="mt-1 space-y-1.5">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">Resultado</label>
+                    <TextInput
+                    placeholder="Nao encontrado"
+                    value={reviewDraftValues[field.key]}
+                    onChange={(event) => handleReviewValueChange(field.key, event.target.value)}
                     />
-                  </label>
+                  </div>
                   <p className="mt-2">
-                    <span className="font-semibold">Ref:</span>{' '}
-                    {formatReferenceValue(pendingReviewReferences[field.key])}
+                    <span className="font-semibold">Ref:</span> {formatReferenceValue(pendingReviewReferences[field.key])}
                   </p>
                 </li>
               ))}
             </ul>
 
-            {reviewError ? <p className="mt-3 text-sm text-red-700">{reviewError}</p> : null}
-
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={handleCancelReview} disabled={isSavingReviewedExam}>
-                Cancelar revisao
-              </Button>
-              <Button type="button" onClick={handleConfirmReviewedExam} disabled={isSavingReviewedExam}>
-                {isSavingReviewedExam ? 'Salvando...' : 'Confirmar e salvar exame'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            {reviewError ? <p className="text-sm font-medium text-red-600">{reviewError}</p> : null}
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={handleCancelReview} disabled={isSavingReviewedExam}>
+              Cancelar revisao
+            </Button>
+            <Button type="button" onClick={handleConfirmReviewedExam} disabled={isSavingReviewedExam}>
+              {isSavingReviewedExam ? 'Salvando...' : 'Confirmar e salvar exame'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   )
 }
+
+

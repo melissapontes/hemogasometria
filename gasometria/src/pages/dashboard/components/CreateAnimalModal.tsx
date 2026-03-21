@@ -1,10 +1,23 @@
-import type { FormEvent } from 'react'
-import { Button, FormField, SelectInput, TextAreaInput, TextInput } from '../../../components/ui'
+﻿import type { FormEvent } from 'react'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  FormField,
+  SelectInput,
+  TextAreaInput,
+  TextInput,
+} from '../../../components/ui'
 import type { AnimalFormState, AnimalType } from '../../../types/animals'
 
 type CreateAnimalModalProps = {
   form: AnimalFormState
   animalTypes: AnimalType[]
+  isOpen: boolean
   isSaving: boolean
   onClose: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -14,37 +27,38 @@ type CreateAnimalModalProps = {
 export function CreateAnimalModal({
   form,
   animalTypes,
+  isOpen,
   isSaving,
   onClose,
   onSubmit,
   onFormChange,
 }: CreateAnimalModalProps) {
   return (
-    <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/55 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2 className="mb-4 text-xl font-bold text-slate-900">Cadastrar novo animal</h2>
+    <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Cadastrar novo animal</DialogTitle>
+          <DialogDescription>Preencha os campos para criar a ficha do paciente.</DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={onSubmit}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <FormField id="animal-nome" label="Nome *">
               <TextInput
                 id="animal-nome"
-                value={form.nome}
-                onChange={(event) => onFormChange('nome', event.target.value)}
                 placeholder="Ex.: Thor"
                 required
+                value={form.nome}
+                onChange={(event) => onFormChange('nome', event.target.value)}
               />
             </FormField>
 
             <FormField id="animal-especie" label="Especie *">
               <SelectInput
                 id="animal-especie"
+                required
                 value={form.animal_type_id}
                 onChange={(event) => onFormChange('animal_type_id', event.target.value)}
-                required
               >
                 <option value="">Selecione</option>
                 {animalTypes.map((type) => (
@@ -58,9 +72,9 @@ export function CreateAnimalModal({
             <FormField id="animal-sexo" label="Sexo *">
               <SelectInput
                 id="animal-sexo"
+                required
                 value={form.sexo}
                 onChange={(event) => onFormChange('sexo', event.target.value)}
-                required
               >
                 <option value="">Selecione</option>
                 <option value="Macho">Macho</option>
@@ -71,47 +85,47 @@ export function CreateAnimalModal({
             <FormField id="animal-idade" label="Idade (anos)">
               <TextInput
                 id="animal-idade"
-                type="number"
                 min={0}
+                placeholder="Ex.: 3"
                 step={1}
+                type="number"
                 value={form.idade_anos}
                 onChange={(event) => onFormChange('idade_anos', event.target.value)}
-                placeholder="Ex.: 3"
               />
             </FormField>
 
             <FormField id="animal-peso" label="Peso (kg)">
               <TextInput
                 id="animal-peso"
-                type="number"
                 min={0}
+                placeholder="Ex.: 12.5"
                 step={0.1}
+                type="number"
                 value={form.peso_kg}
                 onChange={(event) => onFormChange('peso_kg', event.target.value)}
-                placeholder="Ex.: 12.5"
               />
             </FormField>
 
-            <FormField id="animal-observacoes" label="Observacoes" className="space-y-1.5 md:col-span-2">
+            <FormField className="md:col-span-2" id="animal-observacoes" label="Observacoes">
               <TextAreaInput
                 id="animal-observacoes"
+                placeholder="Informacoes clinicas relevantes..."
                 value={form.observacoes}
                 onChange={(event) => onFormChange('observacoes', event.target.value)}
-                placeholder="Informacoes clinicas relevantes..."
               />
             </FormField>
           </div>
 
-          <div className="mt-5 flex justify-end gap-3">
-            <Button type="button" onClick={onClose} disabled={isSaving}>
+          <DialogFooter>
+            <Button disabled={isSaving} type="button" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" disabled={isSaving}>
+            <Button disabled={isSaving} type="submit" variant="primary">
               {isSaving ? 'Salvando...' : 'Salvar animal'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+﻿import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
-import { AlertMessage, PageContainer } from '../../components/ui'
+import { AlertMessage, Card, CardBody, PageContainer } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
 import { supabase } from '../../lib/supabase'
 import { AnimalCard } from './components/AnimalCard'
@@ -156,46 +156,54 @@ export function DashboardPage() {
   }
 
   return (
-    <PageContainer maxWidthClassName="max-w-6xl">
+    <PageContainer maxWidthClassName="max-w-5xl">
       <DashboardHeader userEmail={user?.email} onCreateAnimal={openModal} onSignOut={signOut} />
 
       {errorMessage ? <AlertMessage message={errorMessage} /> : null}
 
-      {isLoading ? <p className="text-slate-700">Carregando animais...</p> : null}
+      {isLoading ? (
+        <Card className="border-slate-200 bg-white/95">
+          <CardBody className="flex flex-row items-center gap-3 p-4 text-slate-600">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
+            Carregando animais...
+          </CardBody>
+        </Card>
+      ) : null}
 
       {!isLoading && formattedAnimals.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-6 text-slate-600">
-          <p>Nenhum animal cadastrado ainda.</p>
-          <p>Clique em "Novo animal" para criar o primeiro card.</p>
-        </div>
+        <Card className="border-dashed border-slate-300 bg-white/90 shadow-none">
+          <CardBody className="p-5 text-sm text-slate-600">
+            <p>Nenhum animal cadastrado ainda.</p>
+            <p>Toque em "Novo animal" para criar o primeiro card.</p>
+          </CardBody>
+        </Card>
       ) : null}
 
       {!isLoading && formattedAnimals.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {formattedAnimals.map((animal) => (
             <AnimalCard
               key={animal.id}
               id={animal.id}
-              nome={animal.nome}
-              especie={animal.especie}
-              sexo={animal.sexo}
               idadeAnos={animal.idade_anos}
+              especie={animal.especie}
+              nome={animal.nome}
+              sexo={animal.sexo}
               onOpen={(animalId) => navigate(`/animals/${animalId}`)}
             />
           ))}
         </div>
       ) : null}
 
-      {isModalOpen ? (
-        <CreateAnimalModal
-          form={form}
-          animalTypes={animalTypes}
-          isSaving={isSaving}
-          onClose={closeModal}
-          onSubmit={handleCreateAnimal}
-          onFormChange={handleFormChange}
-        />
-      ) : null}
+      <CreateAnimalModal
+        animalTypes={animalTypes}
+        form={form}
+        isOpen={isModalOpen}
+        isSaving={isSaving}
+        onClose={closeModal}
+        onFormChange={handleFormChange}
+        onSubmit={handleCreateAnimal}
+      />
     </PageContainer>
   )
 }

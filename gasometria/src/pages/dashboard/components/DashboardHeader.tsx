@@ -1,4 +1,4 @@
-import { Button } from '../../../components/ui'
+﻿import { Button } from '../../../components/ui'
 
 type DashboardHeaderProps = {
   userEmail?: string
@@ -8,17 +8,20 @@ type DashboardHeaderProps = {
 
 export function DashboardHeader({ userEmail, onCreateAnimal, onSignOut }: DashboardHeaderProps) {
   return (
-    <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <header className="mb-5 flex flex-col gap-4 rounded-2xl border border-sky-100 bg-white/95 p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Animais</h1>
-        <p className="text-sm text-slate-600">Usuario logado: {userEmail}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-sky-700">Painel Clinico</p>
+        <h1 className="text-2xl font-bold text-slate-900">Animais</h1>
+        <p className="text-xs text-slate-500">Usuario logado: {userEmail || 'Nao identificado'}</p>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Button variant="primary" onClick={onCreateAnimal}>
+      <div className="flex gap-2">
+        <Button type="button" variant="primary" onClick={onCreateAnimal}>
           Novo animal
         </Button>
-        <Button onClick={() => void onSignOut()}>Sair</Button>
+        <Button type="button" onClick={() => void onSignOut()}>
+          Sair
+        </Button>
       </div>
     </header>
   )
