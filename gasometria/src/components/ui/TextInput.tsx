@@ -7,7 +7,7 @@ export function TextInput({ className, ...props }: TextInputProps) {
   return (
     <input
       className={cn(
-        'h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200',
+        'h-12 w-full rounded-2xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 shadow-[0_1px_0_0_rgba(15,23,42,0.02)] outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-100',
         className,
       )}
       {...props}

@@ -117,10 +117,10 @@ export function CreateAnimalModal({
           </div>
 
           <DialogFooter>
-            <Button disabled={isSaving} type="button" onClick={onClose}>
+            <Button className="w-full sm:w-auto" disabled={isSaving} type="button" onClick={onClose}>
               Cancelar
             </Button>
-            <Button disabled={isSaving} type="submit" variant="primary">
+            <Button className="w-full sm:w-auto" disabled={isSaving} type="submit" variant="primary">
               {isSaving ? 'Salvando...' : 'Salvar animal'}
             </Button>
           </DialogFooter>

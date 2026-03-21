@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
-import { AlertMessage, Card, CardBody, PageContainer } from '../../components/ui'
+import { AlertMessage, Button, PageContainer } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
 import { supabase } from '../../lib/supabase'
 import { AnimalCard } from './components/AnimalCard'
@@ -162,25 +162,24 @@ export function DashboardPage() {
       {errorMessage ? <AlertMessage message={errorMessage} /> : null}
 
       {isLoading ? (
-        <Card className="border-slate-200 bg-white/95">
-          <CardBody className="flex flex-row items-center gap-3 p-4 text-slate-600">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
-            Carregando animais...
-          </CardBody>
-        </Card>
+        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-3 text-slate-600">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-cyan-600" />
+          Carregando animais...
+        </div>
       ) : null}
 
       {!isLoading && formattedAnimals.length === 0 ? (
-        <Card className="border-dashed border-slate-300 bg-white/90 shadow-none">
-          <CardBody className="p-5 text-sm text-slate-600">
-            <p>Nenhum animal cadastrado ainda.</p>
-            <p>Toque em "Novo animal" para criar o primeiro card.</p>
-          </CardBody>
-        </Card>
+        <section className="rounded-2xl border border-dashed border-slate-300/90 bg-white/55 p-5 text-sm text-slate-600">
+          <p>Nenhum animal cadastrado ainda.</p>
+          <p className="mt-1">Toque em "Novo animal" para criar o primeiro cadastro.</p>
+          <Button className="mt-4 w-full sm:w-auto" type="button" variant="primary" onClick={openModal}>
+            Cadastrar primeiro animal
+          </Button>
+        </section>
       ) : null}
 
       {!isLoading && formattedAnimals.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {formattedAnimals.map((animal) => (
             <AnimalCard
               key={animal.id}
@@ -207,3 +206,4 @@ export function DashboardPage() {
     </PageContainer>
   )
 }
+

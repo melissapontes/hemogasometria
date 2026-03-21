@@ -1,12 +1,10 @@
 ﻿import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Info } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import {
   AlertMessage,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -389,7 +387,9 @@ export function AnimalDetailsPage() {
     useState<ExtractedExamDraftValues>(buildDraftValues(EMPTY_EXTRACTED_VALUES))
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [isSavingReviewedExam, setIsSavingReviewedExam] = useState(false)
-  const [activeExamTab, setActiveExamTab] = useState<ExamCardTab>('extracoes')
+  const [activeExamTab, setActiveExamTab] = useState<ExamCardTab>('calculos')
+  const [isAnimalInfoOpen, setIsAnimalInfoOpen] = useState(false)
+  const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
   const extractedHco3 = extractedValues?.hco3 ?? null
   const extractedPco2 = extractedValues?.pco2 ?? null
   const extractedNa = extractedValues?.na ?? null
@@ -682,6 +682,7 @@ export function AnimalDetailsPage() {
       setPendingReviewReferences(normalizedReferences)
       setPendingSourceFileName(selectedFile.name)
       setReviewDraftValues(buildDraftValues(normalizedValues))
+      setIsExtractDialogOpen(false)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao enviar documento para a IA.'
       setFileError(message)
@@ -739,76 +740,46 @@ export function AnimalDetailsPage() {
 
   return (
     <PageContainer maxWidthClassName="max-w-4xl">
-      <Card className="mb-4 border border-slate-200 bg-white/95">
-        <CardBody className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Detalhes do animal</h1>
-            <p className="text-sm text-slate-500">Leitura e interpretacao de gasometria em formato de app.</p>
-          </div>
-          <Button onClick={() => navigate('/dashboard')}>Voltar</Button>
-        </CardBody>
-      </Card>
+      <section className="mb-4 flex flex-col gap-3 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold leading-tight text-slate-900 sm:text-2xl">
+            {animal?.nome ?? 'Animal'}
+          </h1>
+        </div>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <Button
+            aria-label="Abrir informacoes do animal"
+            className="h-11 w-11 rounded-2xl p-0"
+            title="Informacoes"
+            type="button"
+            variant="secondary"
+            onClick={() => setIsAnimalInfoOpen(true)}
+          >
+            <Info className="h-4 w-4" />
+          </Button>
+          <Button className="flex-1 sm:flex-none" onClick={() => navigate('/dashboard')}>
+            Voltar
+          </Button>
+        </div>
+      </section>
 
       {isLoading ? (
-        <Card className="mb-4 border border-slate-200 bg-white/95">
-          <CardBody className="flex flex-row items-center gap-3 p-4 text-slate-600">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
-            Carregando...
-          </CardBody>
-        </Card>
+        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-3 text-slate-600">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
+          Carregando...
+        </div>
       ) : null}
       {errorMessage ? <AlertMessage message={errorMessage} /> : null}
 
       {!isLoading && !errorMessage && animal ? (
-        <div className="space-y-5">
-          <Card className="border border-slate-200 bg-white/95">
-            <CardHeader className="flex flex-col items-start gap-2 p-4 pb-0">
-              <p className="text-2xl font-semibold">{animal.nome}</p>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {getAnimalTypeName(animal.animal_types)}
-              </span>
-            </CardHeader>
-            <CardBody className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
-              <AnimalInfoItem label="Especie" value={getAnimalTypeName(animal.animal_types)} />
-              <AnimalInfoItem label="Sexo" value={animal.sexo || 'Nao informado'} />
-              <AnimalInfoItem
-                label="Idade"
-                value={animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Nao informada'}
-              />
-              <AnimalInfoItem label="Peso" value={animal.peso_kg ? `${animal.peso_kg} kg` : 'Nao informado'} />
-              <AnimalInfoItem label="Observacoes" value={animal.observacoes || 'Sem observacoes'} />
-              <AnimalInfoItem label="ID" value={animal.id} breakAll />
-            </CardBody>
-          </Card>
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-slate-900">Resultados do exame</h3>
+            <p className="text-sm text-slate-500">Calculos e extracoes ficam centralizados nesta area.</p>
+          </div>
 
-          <Card className="border border-slate-200 bg-white/95">
-            <CardHeader className="flex flex-col items-start gap-1 p-4 pb-0">
-              <h3 className="text-lg font-semibold">Enviar documento para IA (Gemini)</h3>
-              <p className="text-sm text-slate-500">Selecione foto ou PDF para extrair os parametros.</p>
-            </CardHeader>
-            <CardBody className="p-4">
-              <form className="space-y-4" onSubmit={handleSendToAi}>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700" htmlFor="animal-document">
-                    Documento (PDF ou imagem)
-                  </label>
-                  <TextInput
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    id="animal-document"
-                    type="file"
-                    onChange={handleFileChange}
-                  />
-                  <p className="text-xs text-slate-500">Tamanho maximo: 10MB.</p>
-                </div>
-
-                <Button type="submit" disabled={isSendingToAi}>
-                  {isSendingToAi ? 'Enviando...' : 'Enviar para Gemini'}
-                </Button>
-              </form>
-
-            {fileError ? <p className="mt-3 text-sm text-red-700">{fileError}</p> : null}
-            {extractedValues ? (
-              <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+          {extractedValues ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                 <h4 className="text-sm font-semibold text-emerald-900">
                   {latestExam ? 'Ultimo exame salvo' : 'Valores extraidos do exame'}
                 </h4>
@@ -818,44 +789,15 @@ export function AnimalDetailsPage() {
                     {latestExam.sourceFileName ? ` - arquivo: ${latestExam.sourceFileName}` : ''}
                   </p>
                 ) : null}
-                <Tabs className="mt-3" value={activeExamTab} onValueChange={(value) => setActiveExamTab(value as ExamCardTab)}>
+                <Tabs
+                  className="mt-3"
+                  value={activeExamTab}
+                  onValueChange={(value) => setActiveExamTab(value as ExamCardTab)}
+                >
                   <TabsList>
-                    <TabsTrigger value="extracoes">Extracoes</TabsTrigger>
                     <TabsTrigger value="calculos">Calculos e relacoes</TabsTrigger>
+                    <TabsTrigger value="extracoes">Extracoes</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="extracoes">
-                    <ul className="mt-2 space-y-2">
-                    {EXAM_PARAMETER_FIELDS.map((field) => {
-                      const reference = extractedReferences[field.key]
-                      const referenceBounds = resolveReferenceBounds(reference)
-                      const patientValue = extractedValues[field.key]
-
-                      return (
-                        <li
-                          key={field.key}
-                          className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
-                        >
-                          <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{field.label}</p>
-                          <p className="mt-1">
-                            <span className="font-semibold">Resultado:</span>{' '}
-                            {patientValue === null ? 'Nao encontrado' : patientValue}
-                          </p>
-                          <p>
-                            <span className="font-semibold">Ref:</span> {formatReferenceValue(reference)}
-                          </p>
-                          <div className="mt-2">
-                            <ParameterRangeBar
-                              label={field.label}
-                              max={referenceBounds.max}
-                              min={referenceBounds.min}
-                              patientValue={patientValue}
-                            />
-                          </div>
-                        </li>
-                      )
-                    })}
-                    </ul>
-                  </TabsContent>
                   <TabsContent value="calculos">
                     <div className="mt-2 space-y-3">
                     <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
@@ -927,18 +869,139 @@ export function AnimalDetailsPage() {
                     </div>
                     </div>
                   </TabsContent>
+                  <TabsContent value="extracoes">
+                    <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {EXAM_PARAMETER_FIELDS.map((field) => {
+                      const reference = extractedReferences[field.key]
+                      const referenceBounds = resolveReferenceBounds(reference)
+                      const patientValue = extractedValues[field.key]
+
+                      return (
+                        <li
+                          key={field.key}
+                          className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        >
+                          <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{field.label}</p>
+                          <p className="mt-1">
+                            <span className="font-semibold">Resultado:</span>{' '}
+                            {patientValue === null ? 'Nao encontrado' : patientValue}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Ref:</span> {formatReferenceValue(reference)}
+                          </p>
+                          <div className="mt-2">
+                            <ParameterRangeBar
+                              label={field.label}
+                              max={referenceBounds.max}
+                              min={referenceBounds.min}
+                              patientValue={patientValue}
+                            />
+                          </div>
+                        </li>
+                      )
+                    })}
+                    </ul>
+                  </TabsContent>
                 </Tabs>
-              </div>
-            ) : null}
-            </CardBody>
-          </Card>
-        </div>
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-dashed border-slate-300/80 bg-white/60 p-4 text-sm text-slate-600">
+              Nenhum exame extraido ainda. Toque no botao abaixo para enviar documento ou foto.
+            </p>
+          )}
+
+          <Button
+            className="w-full sm:w-auto"
+            type="button"
+            variant="primary"
+            onClick={() => {
+              setSelectedFile(null)
+              setFileError(null)
+              setIsExtractDialogOpen(true)
+            }}
+          >
+            Extrair novo documento
+          </Button>
+        </section>
       ) : null}
 
       <Separator className="my-4" />
-      <Link className="text-sm font-medium text-sky-700 hover:underline" to="/dashboard">
+      <Link className="text-sm font-medium text-cyan-700 hover:underline" to="/dashboard">
         Ir para lista de animais
       </Link>
+
+      <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Extrair novo documento</DialogTitle>
+            <DialogDescription>Envie foto ou PDF para extrair os parametros no Gemini.</DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={handleSendToAi}>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700" htmlFor="animal-document">
+                Documento (PDF ou imagem)
+              </label>
+              <TextInput
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                id="animal-document"
+                type="file"
+                onChange={handleFileChange}
+              />
+              <p className="text-xs text-slate-500">Tamanho maximo: 10MB.</p>
+            </div>
+
+            {selectedFile ? (
+              <p className="text-xs text-slate-600">
+                Arquivo selecionado: <span className="font-semibold">{selectedFile.name}</span>
+              </p>
+            ) : null}
+
+            {fileError ? <p className="text-sm text-red-700">{fileError}</p> : null}
+
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setIsExtractDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSendingToAi}>
+                {isSendingToAi ? 'Enviando...' : 'Enviar para Gemini'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAnimalInfoOpen} onOpenChange={setIsAnimalInfoOpen}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Informacoes do animal</DialogTitle>
+            <DialogDescription>Dados cadastrais e clinicos do paciente.</DialogDescription>
+          </DialogHeader>
+
+          {animal ? (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-xl font-semibold leading-tight text-slate-900">{animal.nome}</p>
+                <p className="mt-1 text-sm font-medium text-emerald-800">
+                  {getAnimalTypeName(animal.animal_types)}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <AnimalInfoItem label="Especie" value={getAnimalTypeName(animal.animal_types)} />
+                <AnimalInfoItem label="Sexo" value={animal.sexo || 'Nao informado'} />
+                <AnimalInfoItem
+                  label="Idade"
+                  value={animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Nao informada'}
+                />
+                <AnimalInfoItem label="Peso" value={animal.peso_kg ? `${animal.peso_kg} kg` : 'Nao informado'} />
+                <AnimalInfoItem label="Observacoes" value={animal.observacoes || 'Sem observacoes'} />
+                <AnimalInfoItem label="ID" value={animal.id} breakAll />
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={Boolean(pendingReviewValues)}
@@ -990,5 +1053,10 @@ export function AnimalDetailsPage() {
     </PageContainer>
   )
 }
+
+
+
+
+
 
 
