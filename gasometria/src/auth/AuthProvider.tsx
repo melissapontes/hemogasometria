@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { clearStoredAuthSession, supabase } from '../lib/supabase'
 
 type AuthContextValue = {
   session: Session | null
@@ -22,6 +22,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     let isMounted = true
+    let isRecoveringSession = false
+
+    function isInvalidRefreshTokenError(message?: string): boolean {
+      if (!message) {
+        return false
+      }
+
+      const normalizedMessage = message.toLowerCase()
+      return (
+        normalizedMessage.includes('invalid refresh token') ||
+        normalizedMessage.includes('refresh token not found')
+      )
+    }
 
     async function loadSession() {
       const { data, error } = await supabase.auth.getSession()
@@ -32,6 +45,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (!error) {
         setSession(data.session)
+      } else if (isInvalidRefreshTokenError(error.message) && !isRecoveringSession) {
+        isRecoveringSession = true
+        clearStoredAuthSession()
+        await supabase.auth.signOut({ scope: 'local' })
+        if (isMounted) {
+          setSession(null)
+        }
       }
 
       setIsLoading(false)

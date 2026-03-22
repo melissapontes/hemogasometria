@@ -20,7 +20,7 @@ import {
   TextInput,
 } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
-import { supabase } from '../../lib/supabase'
+import { clearStoredAuthSession, supabase } from '../../lib/supabase'
 import type { Animal } from '../../types/animals'
 import { AnimalInfoItem } from './components/AnimalInfoItem'
 import { ParameterRangeBar } from './components/ParameterRangeBar'
@@ -39,13 +39,17 @@ type ExtractedExamValues = {
   pco2: number | null
   po2: number | null
   be: number | null
+  be_cf: number | null
   hco3: number | null
   tco2: number | null
   so2: number | null
+  cso2: number | null
   na: number | null
   k: number | null
   ica: number | null
   glicose: number | null
+  lactato: number | null
+  anion_gap: number | null
   hematocrito: number | null
   hemoglobina: number | null
   temperatura: number | null
@@ -76,13 +80,17 @@ const EMPTY_EXTRACTED_VALUES: ExtractedExamValues = {
   pco2: null,
   po2: null,
   be: null,
+  be_cf: null,
   hco3: null,
   tco2: null,
   so2: null,
+  cso2: null,
   na: null,
   k: null,
   ica: null,
   glicose: null,
+  lactato: null,
+  anion_gap: null,
   hematocrito: null,
   hemoglobina: null,
   temperatura: null,
@@ -100,13 +108,17 @@ const EMPTY_EXTRACTED_REFERENCES: ExtractedExamReferences = {
   pco2: { ...EMPTY_REFERENCE_RANGE },
   po2: { ...EMPTY_REFERENCE_RANGE },
   be: { ...EMPTY_REFERENCE_RANGE },
+  be_cf: { ...EMPTY_REFERENCE_RANGE },
   hco3: { ...EMPTY_REFERENCE_RANGE },
   tco2: { ...EMPTY_REFERENCE_RANGE },
   so2: { ...EMPTY_REFERENCE_RANGE },
+  cso2: { ...EMPTY_REFERENCE_RANGE },
   na: { ...EMPTY_REFERENCE_RANGE },
   k: { ...EMPTY_REFERENCE_RANGE },
   ica: { ...EMPTY_REFERENCE_RANGE },
   glicose: { ...EMPTY_REFERENCE_RANGE },
+  lactato: { ...EMPTY_REFERENCE_RANGE },
+  anion_gap: { ...EMPTY_REFERENCE_RANGE },
   hematocrito: { ...EMPTY_REFERENCE_RANGE },
   hemoglobina: { ...EMPTY_REFERENCE_RANGE },
   temperatura: { ...EMPTY_REFERENCE_RANGE },
@@ -118,14 +130,18 @@ const EXAM_PARAMETER_FIELDS: Array<{ key: ExtractedExamValueKey; label: string }
   { key: 'pco2', label: 'pCO2' },
   { key: 'po2', label: 'pO2' },
   { key: 'be', label: 'BE' },
+  { key: 'be_cf', label: 'BE cf' },
   { key: 'hco3', label: 'HCO3' },
   { key: 'tco2', label: 'tCO2' },
   { key: 'so2', label: 'sO2' },
-  { key: 'na', label: 'Sodio (Na)' },
-  { key: 'k', label: 'Potassio (K)' },
-  { key: 'ica', label: 'iCa' },
+  { key: 'cso2', label: 'CSO2' },
+  { key: 'na', label: 'Sódio (Na)' },
+  { key: 'k', label: 'Potássio (K)' },
+  { key: 'ica', label: 'Cá++' },
   { key: 'glicose', label: 'Glicose' },
-  { key: 'hematocrito', label: 'Hematocrito' },
+  { key: 'lactato', label: 'Lactato' },
+  { key: 'anion_gap', label: 'Ânion Gap' },
+  { key: 'hematocrito', label: 'Hematócrito' },
   { key: 'hemoglobina', label: 'Hemoglobina' },
   { key: 'temperatura', label: 'Temperatura' },
   { key: 'cloro', label: 'Cloro (Cl)' },
@@ -155,13 +171,17 @@ function buildDraftValues(values: ExtractedExamValues): ExtractedExamDraftValues
     pco2: toDraftValue(values.pco2),
     po2: toDraftValue(values.po2),
     be: toDraftValue(values.be),
+    be_cf: toDraftValue(values.be_cf),
     hco3: toDraftValue(values.hco3),
     tco2: toDraftValue(values.tco2),
     so2: toDraftValue(values.so2),
+    cso2: toDraftValue(values.cso2),
     na: toDraftValue(values.na),
     k: toDraftValue(values.k),
     ica: toDraftValue(values.ica),
     glicose: toDraftValue(values.glicose),
+    lactato: toDraftValue(values.lactato),
+    anion_gap: toDraftValue(values.anion_gap),
     hematocrito: toDraftValue(values.hematocrito),
     hemoglobina: toDraftValue(values.hemoglobina),
     temperatura: toDraftValue(values.temperatura),
@@ -213,13 +233,17 @@ function normalizeExtractedValues(raw: unknown): ExtractedExamValues {
     pco2: normalizeNumber(input.pco2),
     po2: normalizeNumber(input.po2),
     be: normalizeNumber(input.be),
+    be_cf: normalizeNumber(input.be_cf),
     hco3: normalizeNumber(input.hco3),
     tco2: normalizeNumber(input.tco2),
     so2: normalizeNumber(input.so2),
+    cso2: normalizeNumber(input.cso2),
     na: normalizeNumber(input.na),
     k: normalizeNumber(input.k),
     ica: normalizeNumber(input.ica),
     glicose: normalizeNumber(input.glicose),
+    lactato: normalizeNumber(input.lactato),
+    anion_gap: normalizeNumber(input.anion_gap),
     hematocrito: normalizeNumber(input.hematocrito),
     hemoglobina: normalizeNumber(input.hemoglobina),
     temperatura: normalizeNumber(input.temperatura),
@@ -246,13 +270,17 @@ function normalizeExtractedReferences(raw: unknown): ExtractedExamReferences {
     pco2: normalizeReferenceRange(input.pco2),
     po2: normalizeReferenceRange(input.po2),
     be: normalizeReferenceRange(input.be),
+    be_cf: normalizeReferenceRange(input.be_cf),
     hco3: normalizeReferenceRange(input.hco3),
     tco2: normalizeReferenceRange(input.tco2),
     so2: normalizeReferenceRange(input.so2),
+    cso2: normalizeReferenceRange(input.cso2),
     na: normalizeReferenceRange(input.na),
     k: normalizeReferenceRange(input.k),
     ica: normalizeReferenceRange(input.ica),
     glicose: normalizeReferenceRange(input.glicose),
+    lactato: normalizeReferenceRange(input.lactato),
+    anion_gap: normalizeReferenceRange(input.anion_gap),
     hematocrito: normalizeReferenceRange(input.hematocrito),
     hemoglobina: normalizeReferenceRange(input.hemoglobina),
     temperatura: normalizeReferenceRange(input.temperatura),
@@ -644,9 +672,27 @@ export function AnimalDetailsPage() {
     setIsSendingToAi(true)
 
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      const session = sessionData.session
+      const sessionErrorMessage = sessionError?.message?.toLowerCase() ?? ''
+      const isInvalidRefreshToken =
+        sessionErrorMessage.includes('invalid refresh token') ||
+        sessionErrorMessage.includes('refresh token not found')
+
+      if (isInvalidRefreshToken || !session?.access_token) {
+        clearStoredAuthSession()
+        await supabase.auth.signOut({ scope: 'local' })
+        setFileError('Sua sessao expirou. Faca login novamente.')
+        navigate('/login', { replace: true })
+        return
+      }
+
       const fileBase64 = await convertFileToBase64(selectedFile)
 
       const { data, error } = await supabase.functions.invoke('interpret-animal-document', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: {
           animalId: animal.id,
           fileName: selectedFile.name,
@@ -685,7 +731,21 @@ export function AnimalDetailsPage() {
       setIsExtractDialogOpen(false)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao enviar documento para a IA.'
-      setFileError(message)
+      const normalizedMessage = message.toLowerCase()
+      const isUnauthorized =
+        normalizedMessage.includes('401') ||
+        normalizedMessage.includes('unauthorized') ||
+        normalizedMessage.includes('invalid jwt') ||
+        normalizedMessage.includes('jwt')
+
+      if (isUnauthorized) {
+        clearStoredAuthSession()
+        await supabase.auth.signOut({ scope: 'local' })
+        setFileError('Sua sessao expirou. Faca login novamente.')
+        navigate('/login', { replace: true })
+      } else {
+        setFileError(message)
+      }
     } finally {
       setIsSendingToAi(false)
     }

@@ -1,0 +1,24 @@
+name: gasometria
+
+services:
+  app:
+    build: .
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+
+  supabase-cli:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+    entrypoint: ["npx", "-y", "supabase"]
+    environment:
+      SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF}
+      SUPABASE_ACCESS_TOKEN: ${SUPABASE_ACCESS_TOKEN}

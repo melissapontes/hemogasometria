@@ -17,13 +17,17 @@ const FIELD_KEYS = [
   'pco2',
   'po2',
   'be',
+  'be_cf',
   'hco3',
   'tco2',
   'so2',
+  'cso2',
   'na',
   'k',
   'ica',
   'glicose',
+  'lactato',
+  'anion_gap',
   'hematocrito',
   'hemoglobina',
   'temperatura',
@@ -64,13 +68,17 @@ EXTRAIR APENAS OS SEGUINTES PARAMETROS:
 - pCO2
 - pO2
 - BE (Excesso de Base)
+- BE cf
 - HCO3 (Bicarbonato)
 - tCO2
 - sO2
+- cSO2
 - Sodio (Na)
 - Potassio (K)
 - iCa (Calcio ionico / ionizado)
 - Glicose
+- Lactato
+- Anion Gap
 - Hematocrito
 - Hemoglobina
 - Temperatura
@@ -81,13 +89,17 @@ REGRAS DE IDENTIFICACAO:
 - pCO2 -> "pCO2", "PaCO2"
 - pO2 -> "pO2", "PaO2"
 - BE -> "BE", "Base Excess", "Excesso de Base"
+- BE cf -> "BE cf", "BEecf", "Base Excess ecf"
 - HCO3 -> "HCO3", "Bicarbonato"
 - tCO2 -> "tCO2", "TCO2"
 - sO2 -> "sO2", "SatO2", "Saturacao de O2"
+- cSO2 -> "cSO2", "ctSO2", "conteudo de O2", "conteudo de oxigenio"
 - Sodio -> "Na", "Sodio"
 - Potassio -> "K", "Potassio"
 - iCa -> "iCa", "Calcio ionico", "Calcio ionizado"
 - Glicose -> "Glicose", "Glucose", "Glu"
+- Lactato -> "Lactato", "Lactate", "Lac"
+- Anion Gap -> "Anion Gap", "AnionGap", "AG"
 - Hematocrito -> "Ht", "Hematocrito"
 - Hemoglobina -> "Hb", "Hemoglobina"
 - Temperatura -> "Temp", "Temperatura"
@@ -112,13 +124,17 @@ Retorne APENAS um JSON valido com este formato:
     "pco2": number|null,
     "po2": number|null,
     "be": number|null,
+    "be_cf": number|null,
     "hco3": number|null,
     "tco2": number|null,
     "so2": number|null,
+    "cso2": number|null,
     "na": number|null,
     "k": number|null,
     "ica": number|null,
     "glicose": number|null,
+    "lactato": number|null,
+    "anion_gap": number|null,
     "hematocrito": number|null,
     "hemoglobina": number|null,
     "temperatura": number|null,
@@ -129,13 +145,17 @@ Retorne APENAS um JSON valido com este formato:
     "pco2": { "raw": string|null, "min": number|null, "max": number|null },
     "po2": { "raw": string|null, "min": number|null, "max": number|null },
     "be": { "raw": string|null, "min": number|null, "max": number|null },
+    "be_cf": { "raw": string|null, "min": number|null, "max": number|null },
     "hco3": { "raw": string|null, "min": number|null, "max": number|null },
     "tco2": { "raw": string|null, "min": number|null, "max": number|null },
     "so2": { "raw": string|null, "min": number|null, "max": number|null },
+    "cso2": { "raw": string|null, "min": number|null, "max": number|null },
     "na": { "raw": string|null, "min": number|null, "max": number|null },
     "k": { "raw": string|null, "min": number|null, "max": number|null },
     "ica": { "raw": string|null, "min": number|null, "max": number|null },
     "glicose": { "raw": string|null, "min": number|null, "max": number|null },
+    "lactato": { "raw": string|null, "min": number|null, "max": number|null },
+    "anion_gap": { "raw": string|null, "min": number|null, "max": number|null },
     "hematocrito": { "raw": string|null, "min": number|null, "max": number|null },
     "hemoglobina": { "raw": string|null, "min": number|null, "max": number|null },
     "temperatura": { "raw": string|null, "min": number|null, "max": number|null },
@@ -153,8 +173,8 @@ PROIBIDO:
 
 const RECOVERY_PROMPT = `
 Retorne APENAS um JSON valido e completo com os objetos obrigatorios "extracted" e "references".
-Em "extracted", inclua as 15 chaves: ph, pco2, po2, be, hco3, tco2, so2, na, k, ica, glicose, hematocrito, hemoglobina, temperatura, cloro.
-Em "references", inclua as mesmas 15 chaves e cada uma com: raw, min, max.
+Em "extracted", inclua as 19 chaves: ph, pco2, po2, be, be_cf, hco3, tco2, so2, cso2, na, k, ica, glicose, lactato, anion_gap, hematocrito, hemoglobina, temperatura, cloro.
+Em "references", inclua as mesmas 19 chaves e cada uma com: raw, min, max.
 Se nao encontrar algum valor, use null.
 Nao retorne texto fora do JSON.
 `.trim()
