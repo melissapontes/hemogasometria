@@ -39,9 +39,7 @@ export function LoginPage() {
     <main className="flex min-h-dvh items-center justify-center bg-[radial-gradient(circle_at_5%_-10%,rgba(6,182,212,0.22),transparent_38%),radial-gradient(circle_at_95%_108%,rgba(16,185,129,0.2),transparent_30%),linear-gradient(180deg,#f8fbff,#edf4ff_60%,#eef8f9)] px-3 py-6 sm:px-6">
       <Card className="w-full max-w-md border-cyan-100 bg-white/95 shadow-[0_18px_60px_-26px_rgba(2,44,68,0.45)]">
         <CardHeader className="space-y-1 px-6">
-          <p className="text-xs uppercase tracking-[0.22em] text-cyan-700">Gasometria MAE</p>
           <h1 className="text-2xl font-bold text-slate-900">Entrar</h1>
-          <p className="text-sm text-slate-500">Acesse o app e acompanhe os exames com seguranca.</p>
         </CardHeader>
 
         <CardBody className="px-6 pb-6 pt-4">
