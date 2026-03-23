@@ -835,13 +835,12 @@ export function AnimalDetailsPage() {
         <section className="space-y-4">
           <div className="space-y-1">
             <h3 className="text-lg font-semibold text-slate-900">Resultados do exame</h3>
-            <p className="text-sm text-slate-500">Calculos e extracoes ficam centralizados nesta area.</p>
           </div>
 
           {extractedValues ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                 <h4 className="text-sm font-semibold text-emerald-900">
-                  {latestExam ? 'Ultimo exame salvo' : 'Valores extraidos do exame'}
+                  {latestExam ? 'Último exame salvo' : 'Valores extraídos do exame'}
                 </h4>
                 {latestExam ? (
                   <p className="mt-1 text-xs text-emerald-800">
@@ -855,8 +854,8 @@ export function AnimalDetailsPage() {
                   onValueChange={(value) => setActiveExamTab(value as ExamCardTab)}
                 >
                   <TabsList>
-                    <TabsTrigger value="calculos">Calculos e relacoes</TabsTrigger>
-                    <TabsTrigger value="extracoes">Extracoes</TabsTrigger>
+                    <TabsTrigger value="calculos">Cálculos e relações</TabsTrigger>
+                    <TabsTrigger value="extracoes">Extrações</TabsTrigger>
                   </TabsList>
                   <TabsContent value="calculos">
                     <div className="mt-2 space-y-3">
@@ -967,13 +966,16 @@ export function AnimalDetailsPage() {
                               </span>
                             )}
                           </p>
+                          {/* Referência sem negrito */}
+                          <p>
+                            Ref: {formatReferenceValue(reference)}
+                          </p>
                           <div className="mt-2">
                             <ParameterRangeBar
                               label={field.label}
                               max={referenceBounds.max}
                               min={referenceBounds.min}
                               patientValue={patientValue}
-                              refText={`Ref: ${formatReferenceValue(reference)}`}
                             />
                           </div>
                         </li>
