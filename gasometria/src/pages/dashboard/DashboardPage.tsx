@@ -107,7 +107,7 @@ export function DashboardPage() {
     event.preventDefault()
 
     if (!user) {
-      setErrorMessage('Usuario nao autenticado.')
+      setErrorMessage('Usuario não autenticado.')
       return
     }
 
@@ -123,7 +123,7 @@ export function DashboardPage() {
 
     if (isLegacySchema) {
       setErrorMessage(
-        'Nao foi possivel salvar: o banco ainda nao tem os campos novos. Rode as migracoes do Supabase e tente novamente.',
+        'Não foi possivel salvar: o banco ainda nao tem os campos novos. Rode as migrações do Supabase e tente novamente.',
       )
       return
     }

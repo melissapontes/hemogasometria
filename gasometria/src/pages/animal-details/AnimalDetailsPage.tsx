@@ -137,7 +137,7 @@ const EXAM_PARAMETER_FIELDS: Array<{ key: ExtractedExamValueKey; label: string }
   { key: 'cso2', label: 'CSO2' },
   { key: 'na', label: 'Sódio (Na)' },
   { key: 'k', label: 'Potássio (K)' },
-  { key: 'ica', label: 'Cá++' },
+  { key: 'ica', label: 'Ca++' },
   { key: 'glicose', label: 'Glicose' },
   { key: 'lactato', label: 'Lactato' },
   { key: 'anion_gap', label: 'Ânion Gap' },
@@ -941,13 +941,15 @@ export function AnimalDetailsPage() {
                           key={field.key}
                           className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
                         >
-                          <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">{field.label}</p>
-                          <p className="mt-1">
-                            <span className="font-semibold">Resultado:</span>{' '}
+                          {/* Nome do exame destacado */}
+                          <p className="text-xs font-extrabold uppercase tracking-wide text-emerald-700">{field.label}</p>
+                          {/* Resultado extraído destacado */}
+                          <p className="mt-1 text-lg font-extrabold text-sky-700">
                             {patientValue === null ? 'Nao encontrado' : patientValue}
                           </p>
+                          {/* Referência sem negrito */}
                           <p>
-                            <span className="font-semibold">Ref:</span> {formatReferenceValue(reference)}
+                            Ref: {formatReferenceValue(reference)}
                           </p>
                           <div className="mt-2">
                             <ParameterRangeBar
