@@ -28,32 +28,44 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
   const patientPercent = rawPatientPercent === null ? null : Math.min(98, Math.max(2, rawPatientPercent))
 
   return (
-    <div className="space-y-2">
-      <div className="relative h-3 rounded-full bg-slate-200">
-        {/* Faixa de referência da máquina */}
-        <div
-          className="absolute h-full rounded-full bg-emerald-300"
-          style={{ left: `${machineMinPercent}%`, width: `${machineMaxPercent - machineMinPercent}%`, zIndex: 1 }}
-        />
+    <div className="space-y-1">
+      <div className="relative" style={{ height: 40 }}>
+        {/* Valor do paciente acima do pin, centralizado */}
+        {patientPercent !== null && patientValue !== null && (
+          <div
+            className="absolute left-0 w-0"
+            style={{ left: `${patientPercent}%`, transform: 'translateX(-50%)' }}
+          >
+            <span className="block text-lg font-extrabold text-sky-700 mb-1 text-center select-none" style={{ whiteSpace: 'nowrap' }}>
+              {formatValue(patientValue)}
+            </span>
+          </div>
+        )}
+        <div className="relative h-3 rounded-full bg-slate-200 mt-2">
+          {/* Faixa de referência da máquina */}
+          <div
+            className="absolute h-full rounded-full bg-emerald-300"
+            style={{ left: `${machineMinPercent}%`, width: `${machineMaxPercent - machineMinPercent}%`, zIndex: 1 }}
+          />
 
-        {/* Marcadores das extremidades da máquina */}
-        <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMinPercent}%`, zIndex: 2 }} />
-        <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMaxPercent}%`, zIndex: 2 }} />
+          {/* Marcadores das extremidades da máquina */}
+          <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMinPercent}%`, zIndex: 2 }} />
+          <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMaxPercent}%`, zIndex: 2 }} />
 
-        {/* Pin do paciente */}
-        {patientPercent !== null ? (
-          <>
-            <div
-              className="absolute top-[-19px] h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-sky-600 shadow"
-              style={{ left: `${patientPercent}%`, zIndex: 3 }}
-              title={`${patientLabel}: ${formatValue(patientValue as number)}`}
-            />
-            <div className="absolute top-[-7px] h-3 w-[2px] -translate-x-1/2 bg-sky-600" style={{ left: `${patientPercent}%`, zIndex: 3 }} />
-          </>
-        ) : null}
+          {/* Pin do paciente */}
+          {patientPercent !== null ? (
+            <>
+              <div
+                className="absolute top-[-19px] h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-sky-600 shadow"
+                style={{ left: `${patientPercent}%`, zIndex: 3 }}
+                title={`${patientLabel}: ${formatValue(patientValue as number)}`}
+              />
+              <div className="absolute top-[-7px] h-3 w-[2px] -translate-x-1/2 bg-sky-600" style={{ left: `${patientPercent}%`, zIndex: 3 }} />
+            </>
+          ) : null}
+        </div>
       </div>
-
-      <div className="flex justify-between text-[11px] text-slate-500">
+      <div className="flex justify-between text-[11px] text-slate-500 mt-1">
         <span>Min maq: {formatValue(min)}</span>
         <span>Max maq: {formatValue(max)}</span>
       </div>
