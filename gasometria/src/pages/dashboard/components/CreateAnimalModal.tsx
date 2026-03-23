@@ -78,7 +78,7 @@ export function CreateAnimalModal({
               >
                 <option value="">Selecione</option>
                 <option value="Macho">Macho</option>
-                <option value="Fêmea">Fêmea</option>
+                <option value="Femea">Fêmea</option>
               </SelectInput>
             </FormField>
 

@@ -64,6 +64,7 @@ REGRAS CRITICAS:
 - Nunca misturar Resultado com Referencia
 
 EXTRAIR APENAS OS SEGUINTES PARAMETROS:
+- Data do exame (campo exam_date): data em que o exame foi realizado, no formato YYYY-MM-DD. Se aparecer como DD/MM/AAAA converter para YYYY-MM-DD. Se nao encontrada, retornar null.
 - pH
 - pCO2
 - pO2
@@ -119,6 +120,7 @@ REGRAS DE EXTRACAO:
 FORMATO DE SAIDA OBRIGATORIO:
 Retorne APENAS um JSON valido com este formato:
 {
+  "exam_date": string|null,
   "extracted": {
     "ph": number|null,
     "pco2": number|null,
@@ -367,6 +369,7 @@ function buildResponseSchema() {
   return {
     type: 'OBJECT',
     properties: {
+      exam_date: { type: 'STRING', nullable: true },
       extracted: {
         type: 'OBJECT',
         properties: extractedProperties,
@@ -378,7 +381,7 @@ function buildResponseSchema() {
         required: [...FIELD_KEYS],
       },
     },
-    required: ['extracted', 'references'],
+    required: ['exam_date', 'extracted', 'references'],
   }
 }
 
@@ -500,6 +503,7 @@ Arquivo: ${body.fileName ?? 'nao informado'}
       referencesSource = parsed.references
     }
 
+    let examDate: string | null = typeof parsed.exam_date === 'string' && parsed.exam_date.trim() ? parsed.exam_date.trim() : null
     let extracted = normalizeExtractedValues(extractedSource)
     let references = normalizeExtractedReferences(referencesSource)
 
@@ -541,12 +545,16 @@ Arquivo: ${body.fileName ?? 'nao informado'}
           extracted = retryExtracted
           references = retryReferences
           finishReason = retryData?.candidates?.[0]?.finishReason ?? finishReason
+          if (typeof retryParsed.exam_date === 'string' && retryParsed.exam_date.trim()) {
+            examDate = retryParsed.exam_date.trim()
+          }
         }
       }
     }
 
     return new Response(
       JSON.stringify({
+        exam_date: examDate,
         extracted,
         references,
         debug: {

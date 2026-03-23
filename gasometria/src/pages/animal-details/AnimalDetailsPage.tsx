@@ -62,11 +62,15 @@ type ReferenceRange = {
 
 type ExtractedExamReferences = Record<ExtractedExamValueKey, ReferenceRange>
 
+type BloodType = 'venoso' | 'arterial'
+
 type LatestExamRecord = {
   extractedValues: ExtractedExamValues
   extractedReferences: ExtractedExamReferences
   updatedAt: string
   sourceFileName: string | null
+  examDate: string | null
+  bloodType: BloodType | null
 }
 
 const EMPTY_EXTRACTED_VALUES: ExtractedExamValues = {
@@ -285,14 +289,22 @@ function normalizeExtractedReferences(raw: unknown): ExtractedExamReferences {
 function normalizeExamPayload(raw: unknown): {
   values: ExtractedExamValues
   references: ExtractedExamReferences
+  examDate: string | null
+  bloodType: BloodType | null
 } {
   const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
   const extractedSource = typeof input.extracted !== 'undefined' ? input.extracted : input
   const referencesSource = input.references
+  const examDate = typeof input.exam_date === 'string' ? input.exam_date : null
+  const bloodTypeRaw = input.blood_type
+  const bloodType: BloodType | null =
+    bloodTypeRaw === 'venoso' || bloodTypeRaw === 'arterial' ? bloodTypeRaw : null
 
   return {
     values: normalizeExtractedValues(extractedSource),
     references: normalizeExtractedReferences(referencesSource),
+    examDate,
+    bloodType,
   }
 }
 
@@ -409,6 +421,8 @@ export function AnimalDetailsPage() {
     useState<ExtractedExamDraftValues>(buildDraftValues(EMPTY_EXTRACTED_VALUES))
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [isSavingReviewedExam, setIsSavingReviewedExam] = useState(false)
+  const [reviewExamDate, setReviewExamDate] = useState<string>('')
+  const [reviewBloodType, setReviewBloodType] = useState<BloodType | ''>('')
   const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
   const extractedHco3 = extractedValues?.hco3 ?? null
   const extractedPco2 = extractedValues?.pco2 ?? null
@@ -585,6 +599,8 @@ export function AnimalDetailsPage() {
       extractedReferences: normalizedExam.references,
       updatedAt: data.updated_at,
       sourceFileName: data.source_file_name ?? null,
+      examDate: normalizedExam.examDate,
+      bloodType: normalizedExam.bloodType,
     })
     setExtractedValues(normalizedExam.values)
     setExtractedReferences(normalizedExam.references)
@@ -594,6 +610,8 @@ export function AnimalDetailsPage() {
     values: ExtractedExamValues,
     references: ExtractedExamReferences,
     sourceFileName: string | null,
+    examDate: string | null,
+    bloodType: BloodType | null,
   ) {
     if (!animalId || !user) {
       return
@@ -606,6 +624,8 @@ export function AnimalDetailsPage() {
       extracted_values: {
         extracted: values,
         references,
+        exam_date: examDate,
+        blood_type: bloodType,
       },
       updated_at: new Date().toISOString(),
     }
@@ -625,6 +645,8 @@ export function AnimalDetailsPage() {
       extractedReferences: references,
       updatedAt: data.updated_at,
       sourceFileName: data.source_file_name ?? null,
+      examDate,
+      bloodType,
     })
   }
 
@@ -754,6 +776,9 @@ export function AnimalDetailsPage() {
       setPendingReviewReferences(normalizedReferences)
       setPendingSourceFileName(selectedFile.name)
       setReviewDraftValues(buildDraftValues(normalizedValues))
+      if (typeof data?.exam_date === 'string' && data.exam_date.trim()) {
+        setReviewExamDate(data.exam_date.trim())
+      }
       setIsExtractDialogOpen(false)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao enviar documento para a IA.'
@@ -800,7 +825,13 @@ export function AnimalDetailsPage() {
     setIsSavingReviewedExam(true)
 
     try {
-      await saveLatestExam(values, pendingReviewReferences, pendingSourceFileName)
+      await saveLatestExam(
+        values,
+        pendingReviewReferences,
+        pendingSourceFileName,
+        reviewExamDate || null,
+        reviewBloodType || null,
+      )
       setExtractedValues(values)
       setExtractedReferences(pendingReviewReferences)
       setPendingReviewValues(null)
@@ -808,6 +839,8 @@ export function AnimalDetailsPage() {
       setPendingSourceFileName(null)
       setSelectedFile(null)
       setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
+      setReviewExamDate('')
+      setReviewBloodType('')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao salvar os valores revisados.'
       setReviewError(message)
@@ -822,6 +855,8 @@ export function AnimalDetailsPage() {
     setPendingSourceFileName(null)
     setReviewError(null)
     setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
+    setReviewExamDate('')
+    setReviewBloodType('')
   }
 
   return (
@@ -873,10 +908,16 @@ export function AnimalDetailsPage() {
                   {latestExam ? 'Último exame salvo' : 'Valores extraídos do exame'}
                 </h4>
                 {latestExam ? (
-                  <p className="mt-1 text-xs text-white/70">
-                    Último exame: {formatDateTime(latestExam.updatedAt)}
-                    {latestExam.sourceFileName ? ` - arquivo: ${latestExam.sourceFileName}` : ''}
-                  </p>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/70">
+                    {latestExam.examDate ? (
+                      <span>Data: {new Date(latestExam.examDate + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    ) : null}
+                    {latestExam.bloodType ? (
+                      <span>Sangue: {latestExam.bloodType === 'venoso' ? 'Venoso' : 'Arterial'}</span>
+                    ) : null}
+                    <span>Salvo em: {formatDateTime(latestExam.updatedAt)}</span>
+                    {latestExam.sourceFileName ? <span>Arquivo: {latestExam.sourceFileName}</span> : null}
+                  </div>
                 ) : null}
                 {acidBaseInterpretation && (
                   <div className={`mt-3 rounded-xl px-4 py-3 bg-white border ${acidBaseInterpretation.startsWith('Acidose') ? 'border-red-400' : 'border-blue-400'}`}>
@@ -1133,6 +1174,29 @@ export function AnimalDetailsPage() {
               {pendingSourceFileName ? ` Arquivo: ${pendingSourceFileName}.` : ''}
             </DialogDescription>
           </DialogHeader>
+
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="flex flex-1 flex-col gap-1.5">
+              <label className="text-xs font-semibold tracking-wide text-slate-700">Data do exame</label>
+              <TextInput
+                type="date"
+                value={reviewExamDate}
+                onChange={(e) => setReviewExamDate(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              <label className="text-xs font-semibold tracking-wide text-slate-700">Tipo de sangue</label>
+              <select
+                value={reviewBloodType}
+                onChange={(e) => setReviewBloodType(e.target.value as BloodType | '')}
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              >
+                <option value="">Selecione</option>
+                <option value="venoso">Venoso</option>
+                <option value="arterial">Arterial</option>
+              </select>
+            </div>
+          </div>
 
             <ul className="space-y-2">
               {EXAM_PARAMETER_FIELDS.map((field) => (
