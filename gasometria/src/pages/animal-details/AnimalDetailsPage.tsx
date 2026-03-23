@@ -914,7 +914,7 @@ export function AnimalDetailsPage() {
                     </div>
                   </TabsContent>
                   <TabsContent value="extracoes">
-                    <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <ul className="mt-2 grid grid-cols-1 gap-2">
                     {EXAM_PARAMETER_FIELDS.map((field) => {
                       const reference = extractedReferences[field.key]
                       const referenceBounds = resolveReferenceBounds(reference)
