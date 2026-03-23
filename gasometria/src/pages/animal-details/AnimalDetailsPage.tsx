@@ -429,16 +429,6 @@ export function AnimalDetailsPage() {
     correctedChlorideFormula && extractedNa !== null && extractedCloro !== null && extractedNa !== 0
       ? extractedCloro * (correctedChlorideFormula.divisor / extractedNa)
       : null
-  const pco2DisorderStatus =
-    extractedPco2 === null
-      ? 'Nao calculado (pCO2 do paciente nao encontrado).'
-      : expectedPco2Min === null || expectedPco2Max === null
-        ? 'Nao calculado (pCO2 esperada nao disponivel).'
-        : extractedPco2 >= expectedPco2Min && extractedPco2 <= expectedPco2Max
-          ? 'Disturbio simples'
-          : extractedPco2 > expectedPco2Max
-            ? 'Disturbio misto'
-            : 'Fora da faixa esperada'
   const phStatus =
     extractedPh === null
       ? 'Nao calculado (pH nao encontrado).'
