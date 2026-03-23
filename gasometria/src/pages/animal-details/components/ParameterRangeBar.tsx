@@ -29,22 +29,25 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
   return (
     <div className="space-y-2">
       <div className="relative h-3 rounded-full bg-slate-200">
+        {/* Faixa de referência da máquina */}
         <div
           className="absolute h-full rounded-full bg-emerald-300"
-          style={{ left: `${machineMinPercent}%`, width: `${machineMaxPercent - machineMinPercent}%` }}
+          style={{ left: `${machineMinPercent}%`, width: `${machineMaxPercent - machineMinPercent}%`, zIndex: 1 }}
         />
 
-        <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMinPercent}%` }} />
-        <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMaxPercent}%` }} />
+        {/* Marcadores das extremidades da máquina */}
+        <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMinPercent}%`, zIndex: 2 }} />
+        <div className="absolute top-[-6px] h-6 w-[2px] bg-emerald-700" style={{ left: `${machineMaxPercent}%`, zIndex: 2 }} />
 
+        {/* Pin do paciente */}
         {patientPercent !== null ? (
           <>
             <div
               className="absolute top-[-19px] h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-sky-600 shadow"
-              style={{ left: `${patientPercent}%` }}
+              style={{ left: `${patientPercent}%`, zIndex: 3 }}
               title={`${patientLabel}: ${formatValue(patientValue as number)}`}
             />
-            <div className="absolute top-[-7px] h-3 w-[2px] -translate-x-1/2 bg-sky-600" style={{ left: `${patientPercent}%` }} />
+            <div className="absolute top-[-7px] h-3 w-[2px] -translate-x-1/2 bg-sky-600" style={{ left: `${patientPercent}%`, zIndex: 3 }} />
           </>
         ) : null}
       </div>
@@ -53,10 +56,7 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
         <span>Min maq: {formatValue(min)}</span>
         <span>Max maq: {formatValue(max)}</span>
       </div>
-
-      <p className="text-[11px] text-slate-600">
-        {patientValue === null ? `${patientLabel}: nao encontrado` : `${patientLabel}: ${formatValue(patientValue)}`}
-      </p>
+      {/* Linha removida: Paciente: valor */}
     </div>
   )
 }
