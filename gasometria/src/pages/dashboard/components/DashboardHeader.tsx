@@ -1,4 +1,5 @@
 ﻿import { Button } from '../../../components/ui'
+import { BloodDropIcon } from '../../../components/ui/BloodDropIcon'
 
 type DashboardHeaderProps = {
   userEmail?: string
@@ -11,7 +12,10 @@ export function DashboardHeader({ userEmail, onCreateAnimal, onSignOut }: Dashbo
     <header className="mb-4 border-b border-slate-200/80 pb-4 sm:mb-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.22em] text-cyan-700">Painel Clinico</p>
+          <div className="flex items-center gap-2">
+            <BloodDropIcon size={28} />
+            <p className="text-xs uppercase tracking-[0.22em] text-cyan-700">Gaso Vet</p>
+          </div>
           <h1 className="text-[1.55rem] font-bold leading-tight text-slate-900">Animais</h1>
           <p className="text-xs text-slate-500">Usuario: {userEmail || 'Nao identificado'}</p>
         </div>

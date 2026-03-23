@@ -13,10 +13,6 @@ import {
   DialogTitle,
   PageContainer,
   Separator,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   TextInput,
 } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
@@ -66,7 +62,6 @@ type ReferenceRange = {
 }
 
 type ExtractedExamReferences = Record<ExtractedExamValueKey, ReferenceRange>
-type ExamCardTab = 'extracoes' | 'calculos'
 
 type LatestExamRecord = {
   extractedValues: ExtractedExamValues
@@ -415,7 +410,6 @@ export function AnimalDetailsPage() {
     useState<ExtractedExamDraftValues>(buildDraftValues(EMPTY_EXTRACTED_VALUES))
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [isSavingReviewedExam, setIsSavingReviewedExam] = useState(false)
-  const [activeExamTab, setActiveExamTab] = useState<ExamCardTab>('calculos')
   const [isAnimalInfoOpen, setIsAnimalInfoOpen] = useState(false)
   const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
   const extractedHco3 = extractedValues?.hco3 ?? null
@@ -848,73 +842,7 @@ export function AnimalDetailsPage() {
                     {latestExam.sourceFileName ? ` - arquivo: ${latestExam.sourceFileName}` : ''}
                   </p>
                 ) : null}
-                <Tabs
-                  className="mt-3"
-                  value={activeExamTab}
-                  onValueChange={(value) => setActiveExamTab(value as ExamCardTab)}
-                >
-                  <TabsList>
-                    <TabsTrigger value="calculos">Cálculos e relações</TabsTrigger>
-                    <TabsTrigger value="extracoes">Extrações</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="calculos">
-                    <div className="mt-2 space-y-3">
-
-                    <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">pCO2 compensatoria</p>
-                      {expectedPco2Base === null || expectedPco2Min === null || expectedPco2Max === null ? (
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
-                          Nao calculada (HCO3 nao encontrado).
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
-                          Resultado esperado: {formatExamValue(expectedPco2Min)} a {formatExamValue(expectedPco2Max)}
-                        </p>
-                      )}
-                      <p className="mt-1 text-sm text-slate-900">
-                        Resultado paciente: {extractedPco2 === null ? 'Nao encontrado' : extractedPco2}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">Interpretacao: {pco2DisorderStatus}</p>
-                      <div className="mt-2">
-                        <ParameterRangeBar
-                          label="pCO2"
-                          max={expectedPco2Max}
-                          min={expectedPco2Min}
-                          patientLabel="Paciente (pCO2)"
-                          patientValue={extractedPco2}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-emerald-200 bg-white px-3 py-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
-                        Cloro corrigido (mEq/L)
-                      </p>
-                      {!correctedChlorideFormula ? (
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
-                          Interpretacao: Nao calculado (especie sem formula configurada).
-                        </p>
-                      ) : extractedCloro === null || extractedNa === null ? (
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
-                          Interpretacao: Nao calculado (Na ou Cloro nao encontrado).
-                        </p>
-                      ) : extractedNa === 0 ? (
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
-                          Interpretacao: Nao calculado (Na igual a 0).
-                        </p>
-                      ) : (
-                        <>
-                          <p className="mt-1 text-sm text-slate-900">
-                            Resultado: {formatExamValue(correctedChlorideValue ?? 0)}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-900">Interpretacao: Calculado com sucesso</p>
-                        </>
-                      )}
-                    </div>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="extracoes">
-                    <ul className="mt-2 grid grid-cols-1 gap-2">
+                <ul className="mt-3 grid grid-cols-1 gap-2">
                     {EXAM_PARAMETER_FIELDS.map((field) => {
                       const reference = extractedReferences[field.key]
                       const referenceBounds = resolveReferenceBounds(reference)
@@ -945,20 +873,84 @@ export function AnimalDetailsPage() {
                           <p>
                             Ref: {formatReferenceValue(reference)}
                           </p>
-                          <div className="mt-2">
-                            <ParameterRangeBar
-                              label={field.label}
-                              max={referenceBounds.max}
-                              min={referenceBounds.min}
-                              patientValue={patientValue}
-                            />
-                          </div>
+                          {(() => {
+                            const showCompensatory = field.key === 'pco2' && phStatus === 'Acidemia' && expectedPco2Min !== null && expectedPco2Max !== null
+
+                            if (showCompensatory) {
+                              const allValues = [
+                                referenceBounds.min,
+                                referenceBounds.max,
+                                expectedPco2Min,
+                                expectedPco2Max,
+                                patientValue,
+                              ].filter((v): v is number => v !== null)
+                              const overallMin = Math.min(...allValues)
+                              const overallMax = Math.max(...allValues)
+                              const overallSpan = overallMax - overallMin
+                              const sharedVisualMin = overallMin - overallSpan * 0.2
+                              const sharedVisualMax = overallMax + overallSpan * 0.2
+
+                              return (
+                                <>
+                                  <div className="mt-2">
+                                    <p className="text-xs text-slate-400 mb-1">Referência da máquina</p>
+                                    <ParameterRangeBar
+                                      label={field.label}
+                                      max={referenceBounds.max}
+                                      min={referenceBounds.min}
+                                      patientValue={patientValue}
+                                      forcedVisualMin={sharedVisualMin}
+                                      forcedVisualMax={sharedVisualMax}
+                                    />
+                                  </div>
+                                  <div className="mt-5">
+                                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">pCO2 compensatória esperada</p>
+                                    <p className="text-xs text-slate-600 mb-1">
+                                      Resultado esperado: {formatExamValue(expectedPco2Min!)} a {formatExamValue(expectedPco2Max!)}
+                                    </p>
+                                    <ParameterRangeBar
+                                      label="pCO2 compensatória"
+                                      min={expectedPco2Min!}
+                                      max={expectedPco2Max!}
+                                      patientValue={patientValue as number | null}
+                                      patientLabel="Paciente"
+                                      forcedVisualMin={sharedVisualMin}
+                                      forcedVisualMax={sharedVisualMax}
+                                    />
+                                  </div>
+                                </>
+                              )
+                            }
+
+                            return (
+                              <div className="mt-2">
+                                <ParameterRangeBar
+                                  label={field.label}
+                                  max={referenceBounds.max}
+                                  min={referenceBounds.min}
+                                  patientValue={patientValue}
+                                />
+                              </div>
+                            )
+                          })()}
+                          {field.key === 'cloro' && (
+                            <div className="mt-3">
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Cloro corrigido (mEq/L)</p>
+                              {!correctedChlorideFormula ? (
+                                <p className="text-xs text-slate-600">Não calculado (espécie sem fórmula configurada).</p>
+                              ) : extractedCloro === null || extractedNa === null ? (
+                                <p className="text-xs text-slate-600">Não calculado (Na ou Cloro não encontrado).</p>
+                              ) : extractedNa === 0 ? (
+                                <p className="text-xs text-slate-600">Não calculado (Na igual a 0).</p>
+                              ) : (
+                                <p className="text-xs text-slate-600">Resultado: {formatExamValue(correctedChlorideValue ?? 0)}</p>
+                              )}
+                            </div>
+                          )}
                         </li>
                       )
                     })}
-                    </ul>
-                  </TabsContent>
-                </Tabs>
+                </ul>
             </div>
           ) : (
             <p className="rounded-2xl border border-dashed border-slate-300/80 bg-white/60 p-4 text-sm text-slate-600">

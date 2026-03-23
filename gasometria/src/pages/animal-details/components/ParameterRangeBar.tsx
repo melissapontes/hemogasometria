@@ -1,24 +1,26 @@
-﻿type ParameterRangeBarProps = {
+type ParameterRangeBarProps = {
   label: string
   min: number | null
   max: number | null
   patientValue: number | null
   patientLabel?: string
   refText?: string
+  forcedVisualMin?: number
+  forcedVisualMax?: number
 }
 
 function formatValue(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1)
 }
 
-export function ParameterRangeBar({ label, min, max, patientValue, patientLabel = 'Paciente', refText }: ParameterRangeBarProps) {
+export function ParameterRangeBar({ label, min, max, patientValue, patientLabel = 'Paciente', refText, forcedVisualMin, forcedVisualMax }: ParameterRangeBarProps) {
   if (min === null || max === null || max <= min) {
     return <p className="text-xs text-slate-500">Faixa da maquina indisponivel para {label.toLowerCase()}.</p>
   }
 
   const span = max - min
-  const visualMin = min - span * 0.35
-  const visualMax = max + span * 0.35
+  const visualMin = forcedVisualMin ?? min - span * 0.35
+  const visualMax = forcedVisualMax ?? max + span * 0.35
   const visualSpan = visualMax - visualMin
 
   const machineMinPercent = ((min - visualMin) / visualSpan) * 100
