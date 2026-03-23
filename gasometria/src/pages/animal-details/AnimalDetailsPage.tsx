@@ -429,7 +429,6 @@ export function AnimalDetailsPage() {
     correctedChlorideFormula && extractedNa !== null && extractedCloro !== null && extractedNa !== 0
       ? extractedCloro * (correctedChlorideFormula.divisor / extractedNa)
       : null
-
   const phStatus =
     extractedPh === null
       ? 'Nao calculado (pH nao encontrado).'
