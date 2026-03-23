@@ -29,13 +29,7 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
 
   return (
     <div className="space-y-2">
-      {/* Valor do paciente fora da barra, como antes */}
-      {patientValue !== null && (
-        <div className="text-lg font-extrabold text-sky-700 select-none" style={{ whiteSpace: 'nowrap' }}>
-          {formatValue(patientValue)}
-        </div>
-      )}
-      {/* Barra de referência mais abaixo */}
+      {/* Barra de referência mais abaixo, sem valor do paciente acima */}
       <div className="relative h-3 rounded-full bg-slate-200 mt-4">
         {/* Faixa de referência da máquina */}
         <div
@@ -59,10 +53,7 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
           </>
         ) : null}
       </div>
-      <div className="flex justify-between text-[11px] text-slate-500 mt-1">
-        <span>Min maq: {formatValue(min)}</span>
-        <span>Max maq: {formatValue(max)}</span>
-      </div>
+      {/* Removido: Min maq/Max maq */}
       {refText && (
         <div className="text-[13px] text-slate-700 mt-1">{refText}</div>
       )}
