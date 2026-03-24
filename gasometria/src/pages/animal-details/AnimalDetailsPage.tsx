@@ -1395,9 +1395,16 @@ export function AnimalDetailsPage() {
                                   <span className="text-[11px] text-slate-400">g/dL</span>
                                 </div>
                                 {agCorrAlbumina !== null && (
-                                  <p className="mt-1.5 text-xs text-slate-700">
-                                    AG<sub>alb</sub> = <span className="font-semibold">{formatExamValue(agCorrAlbumina)} mEq/L</span>
-                                  </p>
+                                  <div className="mt-1.5">
+                                    <p className="text-xs text-slate-700">
+                                      AG<sub>alb</sub> = <span className="font-semibold">{formatExamValue(agCorrAlbumina)} mEq/L</span>
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-slate-400 font-mono">
+                                      {(animalTypeNorm === 'gato' || animalTypeNorm === 'felina' || animalTypeNorm === 'felino')
+                                        ? 'AG + 0,41 × (3,3 − [Alb])'
+                                        : 'AG + 0,42 × (3,77 − [Alb])'}
+                                    </p>
+                                  </div>
                                 )}
                                 {albumina !== '' && agCorrAlbumina === null && effectiveAnionGap !== null && (
                                   <p className="mt-1 text-[11px] text-slate-400">Fórmula não disponível para esta espécie.</p>
@@ -1416,9 +1423,12 @@ export function AnimalDetailsPage() {
                                   <span className="text-[11px] text-slate-400">mg/dL</span>
                                 </div>
                                 {agCorrFosforo !== null && (
-                                  <p className="mt-1.5 text-xs text-slate-700">
-                                    AG<sub>fos</sub> = <span className="font-semibold">{formatExamValue(agCorrFosforo)} mEq/L</span>
-                                  </p>
+                                  <div className="mt-1.5">
+                                    <p className="text-xs text-slate-700">
+                                      AG<sub>fos</sub> = <span className="font-semibold">{formatExamValue(agCorrFosforo)} mEq/L</span>
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-slate-400 font-mono">AG + (2,52 − 0,58 × [Pi])</p>
+                                  </div>
                                 )}
                               </div>
                             </div>
