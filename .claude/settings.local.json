@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(supabase projects:*)",
+      "Bash(supabase db:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

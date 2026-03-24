@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import {
   AlertMessage,
@@ -64,6 +64,17 @@ type ExtractedExamReferences = Record<ExtractedExamValueKey, ReferenceRange>
 
 type BloodType = 'venoso' | 'arterial'
 
+type ExamHistoryRecord = {
+  id: number
+  extractedValues: ExtractedExamValues
+  extractedReferences: ExtractedExamReferences
+  examDate: string | null
+  bloodType: BloodType | null
+  sourceFileName: string | null
+  documentPath: string | null
+  createdAt: string
+}
+
 type LatestExamRecord = {
   extractedValues: ExtractedExamValues
   extractedReferences: ExtractedExamReferences
@@ -71,6 +82,7 @@ type LatestExamRecord = {
   sourceFileName: string | null
   examDate: string | null
   bloodType: BloodType | null
+  documentPath: string | null
 }
 
 const EMPTY_EXTRACTED_VALUES: ExtractedExamValues = {
@@ -291,6 +303,7 @@ function normalizeExamPayload(raw: unknown): {
   references: ExtractedExamReferences
   examDate: string | null
   bloodType: BloodType | null
+  documentPath: string | null
 } {
   const input = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
   const extractedSource = typeof input.extracted !== 'undefined' ? input.extracted : input
@@ -299,12 +312,14 @@ function normalizeExamPayload(raw: unknown): {
   const bloodTypeRaw = input.blood_type
   const bloodType: BloodType | null =
     bloodTypeRaw === 'venoso' || bloodTypeRaw === 'arterial' ? bloodTypeRaw : null
+  const documentPath = typeof input.document_path === 'string' ? input.document_path : null
 
   return {
     values: normalizeExtractedValues(extractedSource),
     references: normalizeExtractedReferences(referencesSource),
     examDate,
     bloodType,
+    documentPath,
   }
 }
 
@@ -424,6 +439,10 @@ export function AnimalDetailsPage() {
   const [reviewExamDate, setReviewExamDate] = useState<string>('')
   const [reviewBloodType, setReviewBloodType] = useState<BloodType | ''>('')
   const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
+  const [examHistory, setExamHistory] = useState<ExamHistoryRecord[]>([])
+  const [selectedHistoryExam, setSelectedHistoryExam] = useState<ExamHistoryRecord | null>(null)
+  const [pendingDocumentPath, setPendingDocumentPath] = useState<string | null>(null)
+  const [editingContext, setEditingContext] = useState<{ source: 'latest' } | { source: 'history'; id: number } | null>(null)
   const extractedHco3 = extractedValues?.hco3 ?? null
   const extractedPco2 = extractedValues?.pco2 ?? null
   const extractedNa = extractedValues?.na ?? null
@@ -499,6 +518,7 @@ export function AnimalDetailsPage() {
   useEffect(() => {
     void loadAnimal()
     void loadLatestExam()
+    void loadExamHistory()
   }, [animalId, user?.id])
 
   async function loadAnimal() {
@@ -601,9 +621,45 @@ export function AnimalDetailsPage() {
       sourceFileName: data.source_file_name ?? null,
       examDate: normalizedExam.examDate,
       bloodType: normalizedExam.bloodType,
+      documentPath: normalizedExam.documentPath,
     })
     setExtractedValues(normalizedExam.values)
     setExtractedReferences(normalizedExam.references)
+  }
+
+  async function loadExamHistory() {
+    if (!animalId || !user) {
+      setExamHistory([])
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('animal_exam_history')
+      .select('id, extracted_values, source_file_name, created_at')
+      .eq('animal_id', animalId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (error || !data) {
+      setExamHistory([])
+      return
+    }
+
+    setExamHistory(
+      data.map((row) => {
+        const normalized = normalizeExamPayload(row.extracted_values)
+        return {
+          id: row.id as number,
+          extractedValues: normalized.values,
+          extractedReferences: normalized.references,
+          examDate: normalized.examDate,
+          bloodType: normalized.bloodType,
+          documentPath: normalized.documentPath,
+          sourceFileName: (row.source_file_name as string | null) ?? null,
+          createdAt: row.created_at as string,
+        }
+      }),
+    )
   }
 
   async function saveLatestExam(
@@ -612,6 +668,7 @@ export function AnimalDetailsPage() {
     sourceFileName: string | null,
     examDate: string | null,
     bloodType: BloodType | null,
+    documentPath: string | null,
   ) {
     if (!animalId || !user) {
       return
@@ -626,6 +683,7 @@ export function AnimalDetailsPage() {
         references,
         exam_date: examDate,
         blood_type: bloodType,
+        document_path: documentPath,
       },
       updated_at: new Date().toISOString(),
     }
@@ -647,7 +705,23 @@ export function AnimalDetailsPage() {
       sourceFileName: data.source_file_name ?? null,
       examDate,
       bloodType,
+      documentPath,
     })
+
+    const historyPayload = {
+      animal_id: animalId,
+      user_id: user.id,
+      source_file_name: sourceFileName,
+      extracted_values: {
+        extracted: values,
+        references,
+        exam_date: examDate,
+        blood_type: bloodType,
+        document_path: documentPath,
+      },
+    }
+    await supabase.from('animal_exam_history').insert(historyPayload)
+    void loadExamHistory()
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -737,6 +811,13 @@ export function AnimalDetailsPage() {
 
       const fileBase64 = await convertFileToBase64(selectedFile)
 
+      const ext = selectedFile.name.split('.').pop() ?? 'bin'
+      const storagePath = `${user?.id}/${animalId}/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('exam-documents')
+        .upload(storagePath, selectedFile, { contentType: selectedFile.type })
+      const uploadedPath = uploadError ? null : storagePath
+
       const { data, error } = await supabase.functions.invoke('interpret-animal-document', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -775,6 +856,7 @@ export function AnimalDetailsPage() {
       setPendingReviewValues(normalizedValues)
       setPendingReviewReferences(normalizedReferences)
       setPendingSourceFileName(selectedFile.name)
+      setPendingDocumentPath(uploadedPath)
       setReviewDraftValues(buildDraftValues(normalizedValues))
       if (typeof data?.exam_date === 'string' && data.exam_date.trim()) {
         setReviewExamDate(data.exam_date.trim())
@@ -825,22 +907,42 @@ export function AnimalDetailsPage() {
     setIsSavingReviewedExam(true)
 
     try {
-      await saveLatestExam(
-        values,
-        pendingReviewReferences,
-        pendingSourceFileName,
-        reviewExamDate || null,
-        reviewBloodType || null,
-      )
-      setExtractedValues(values)
-      setExtractedReferences(pendingReviewReferences)
+      const examDate = reviewExamDate || null
+      const bloodType = reviewBloodType || null
+
+      if (editingContext?.source === 'history') {
+        await supabase.from('animal_exam_history').update({
+          extracted_values: {
+            extracted: values,
+            references: pendingReviewReferences,
+            exam_date: examDate,
+            blood_type: bloodType,
+            document_path: pendingDocumentPath,
+          },
+        }).eq('id', editingContext.id)
+        void loadExamHistory()
+      } else {
+        await saveLatestExam(
+          values,
+          pendingReviewReferences,
+          pendingSourceFileName,
+          examDate,
+          bloodType,
+          pendingDocumentPath,
+        )
+        setExtractedValues(values)
+        setExtractedReferences(pendingReviewReferences)
+        setSelectedFile(null)
+      }
+
       setPendingReviewValues(null)
       setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
       setPendingSourceFileName(null)
-      setSelectedFile(null)
       setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
       setReviewExamDate('')
       setReviewBloodType('')
+      setPendingDocumentPath(null)
+      setEditingContext(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao salvar os valores revisados.'
       setReviewError(message)
@@ -857,6 +959,45 @@ export function AnimalDetailsPage() {
     setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
     setReviewExamDate('')
     setReviewBloodType('')
+    setPendingDocumentPath(null)
+    setEditingContext(null)
+  }
+
+  function handleEditExam(exam: { extractedValues: ExtractedExamValues; extractedReferences: ExtractedExamReferences; examDate: string | null; bloodType: BloodType | null; documentPath: string | null }, context: { source: 'latest' } | { source: 'history'; id: number }) {
+    setPendingReviewValues(exam.extractedValues)
+    setPendingReviewReferences(exam.extractedReferences)
+    setReviewDraftValues(buildDraftValues(exam.extractedValues))
+    setReviewExamDate(exam.examDate ?? '')
+    setReviewBloodType(exam.bloodType ?? '')
+    setPendingDocumentPath(exam.documentPath)
+    setPendingSourceFileName(null)
+    setReviewError(null)
+    setEditingContext(context)
+    setSelectedHistoryExam(null)
+  }
+
+  async function handleDeleteLatestExam() {
+    if (!animalId || !window.confirm('Apagar o exame salvo? Esta ação não pode ser desfeita.')) return
+    await supabase.from('animal_latest_exams').delete().eq('animal_id', animalId)
+    setLatestExam(null)
+    setExtractedValues(null)
+    setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
+  }
+
+  async function handleDeleteHistoryExam(id: number) {
+    if (!window.confirm('Apagar este exame do histórico? Esta ação não pode ser desfeita.')) return
+    await supabase.from('animal_exam_history').delete().eq('id', id)
+    setExamHistory((prev) => prev.filter((e) => e.id !== id))
+    setSelectedHistoryExam(null)
+  }
+
+  async function openDocument(path: string) {
+    const { data, error } = await supabase.storage
+      .from('exam-documents')
+      .createSignedUrl(path, 3600)
+    if (!error && data?.signedUrl) {
+      window.open(data.signedUrl, '_blank')
+    }
   }
 
   return (
@@ -904,19 +1045,53 @@ export function AnimalDetailsPage() {
 
           {extractedValues ? (
             <div className="rounded-2xl border border-emerald-200 bg-[#36494f] p-4">
-                <h4 className="text-sm font-semibold text-white">
-                  {latestExam ? 'Último exame salvo' : 'Valores extraídos do exame'}
-                </h4>
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-white">
+                    {latestExam ? 'Último exame salvo' : 'Valores extraídos do exame'}
+                  </h4>
+                  {latestExam && (
+                    <div className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        title="Editar exame"
+                        onClick={() => handleEditExam(latestExam, { source: 'latest' })}
+                        className="rounded-lg p-1.5 text-white/70 transition hover:bg-white/20 hover:text-white"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Apagar exame"
+                        onClick={() => void handleDeleteLatestExam()}
+                        className="rounded-lg p-1.5 text-white/70 transition hover:bg-red-500/30 hover:text-red-300"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {latestExam ? (
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/70">
-                    {latestExam.examDate ? (
-                      <span>Data: {new Date(latestExam.examDate + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                  <div className="mt-1 space-y-2">
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/70">
+                      {latestExam.examDate ? (
+                        <span>Data: {new Date(latestExam.examDate + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                      ) : null}
+                      {latestExam.bloodType ? (
+                        <span>Sangue: {latestExam.bloodType === 'venoso' ? 'Venoso' : 'Arterial'}</span>
+                      ) : null}
+                      <span>Salvo em: {formatDateTime(latestExam.updatedAt)}</span>
+                      {latestExam.sourceFileName ? <span>Arquivo: {latestExam.sourceFileName}</span> : null}
+                    </div>
+                    {latestExam.documentPath ? (
+                      <button
+                        type="button"
+                        onClick={() => void openDocument(latestExam.documentPath!)}
+                        className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+                        style={{ backgroundColor: '#d63a6e' }}
+                      >
+                        Ver laudo original
+                      </button>
                     ) : null}
-                    {latestExam.bloodType ? (
-                      <span>Sangue: {latestExam.bloodType === 'venoso' ? 'Venoso' : 'Arterial'}</span>
-                    ) : null}
-                    <span>Salvo em: {formatDateTime(latestExam.updatedAt)}</span>
-                    {latestExam.sourceFileName ? <span>Arquivo: {latestExam.sourceFileName}</span> : null}
                   </div>
                 ) : null}
                 {acidBaseInterpretation && (
@@ -978,6 +1153,12 @@ export function AnimalDetailsPage() {
                               </span>
                             )}
                           </p>
+
+                          {field.key === 'lactato' && patientValue !== null && referenceBounds.max !== null && patientValue > referenceBounds.max && (
+                            <p className="mt-1 text-xs font-medium text-orange-700">
+                              Pode ser compatível com hipoperfusão / sepse / choque
+                            </p>
+                          )}
 
                           {(() => {
                             const showCompensatory = field.key === 'pco2' && phStatus === 'Acidemia' && expectedPco2Min !== null && expectedPco2Max !== null
@@ -1105,10 +1286,117 @@ export function AnimalDetailsPage() {
         </section>
       ) : null}
 
+      {examHistory.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold text-slate-900">Histórico de exames</h3>
+          <ul className="space-y-2">
+            {examHistory.map((exam) => (
+              <li key={exam.id}>
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm transition hover:bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedHistoryExam(exam)}
+                    className="flex-1 text-left"
+                  >
+                    <p className="text-sm font-semibold text-slate-800">
+                      {exam.examDate
+                        ? new Date(exam.examDate + 'T00:00:00').toLocaleDateString('pt-BR')
+                        : formatDateTime(exam.createdAt)}
+                    </p>
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-slate-500">
+                      {exam.bloodType && <span>Sangue: {exam.bloodType === 'venoso' ? 'Venoso' : 'Arterial'}</span>}
+                      {exam.sourceFileName && <span>Arquivo: {exam.sourceFileName}</span>}
+                      <span>Salvo em: {formatDateTime(exam.createdAt)}</span>
+                    </div>
+                  </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {exam.documentPath && (
+                      <button
+                        type="button"
+                        onClick={() => void openDocument(exam.documentPath!)}
+                        className="rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+                        style={{ backgroundColor: '#d63a6e' }}
+                      >
+                        Ver laudo
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      title="Editar"
+                      onClick={() => handleEditExam(exam, { source: 'history', id: exam.id })}
+                      className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Apagar"
+                      onClick={() => void handleDeleteHistoryExam(exam.id)}
+                      className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <Separator className="my-4" />
       <Link className="text-sm font-medium text-cyan-700 hover:underline" to="/dashboard">
         Ir para lista de animais
       </Link>
+
+      <Dialog open={Boolean(selectedHistoryExam)} onOpenChange={(open) => { if (!open) setSelectedHistoryExam(null) }}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Exame de {selectedHistoryExam?.examDate
+                ? new Date(selectedHistoryExam.examDate + 'T00:00:00').toLocaleDateString('pt-BR')
+                : selectedHistoryExam ? formatDateTime(selectedHistoryExam.createdAt) : ''}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedHistoryExam?.bloodType && `Sangue: ${selectedHistoryExam.bloodType === 'venoso' ? 'Venoso' : 'Arterial'} · `}
+              {selectedHistoryExam?.sourceFileName && `Arquivo: ${selectedHistoryExam.sourceFileName} · `}
+              Salvo em: {selectedHistoryExam ? formatDateTime(selectedHistoryExam.createdAt) : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedHistoryExam && (
+            <ul className="space-y-2">
+              {EXAM_PARAMETER_FIELDS.map((field) => {
+                const value = selectedHistoryExam.extractedValues[field.key]
+                const ref = selectedHistoryExam.extractedReferences[field.key]
+                return (
+                  <li key={field.key} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                    <p className="text-xs font-semibold text-slate-500">{field.label}{field.unit ? ` (${field.unit})` : ''}</p>
+                    <p className="mt-0.5 text-base font-bold text-sky-700">
+                      {value === null ? 'Não encontrado' : value}
+                    </p>
+                    {ref && formatReferenceValue(ref) !== '—' && (
+                      <p className="text-xs text-slate-400">Ref: {formatReferenceValue(ref)}</p>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          <DialogFooter>
+            {selectedHistoryExam?.documentPath && (
+              <button
+                type="button"
+                onClick={() => void openDocument(selectedHistoryExam.documentPath!)}
+                className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+                style={{ backgroundColor: '#d63a6e' }}
+              >
+                Ver laudo original
+              </button>
+            )}
+            <Button type="button" variant="secondary" onClick={() => setSelectedHistoryExam(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
@@ -1168,9 +1456,9 @@ export function AnimalDetailsPage() {
       >
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Revise e edite antes de confirmar</DialogTitle>
+            <DialogTitle>{editingContext ? 'Editar exame' : 'Revise e edite antes de confirmar'}</DialogTitle>
             <DialogDescription>
-              Confira os campos extraídos pela IA, ajuste se necessário e confirme para salvar.
+              {editingContext ? 'Corrija os valores e confirme para salvar.' : 'Confira os campos extraídos pela IA, ajuste se necessário e confirme para salvar.'}
               {pendingSourceFileName ? ` Arquivo: ${pendingSourceFileName}.` : ''}
             </DialogDescription>
           </DialogHeader>
