@@ -19,9 +19,9 @@ export function AnimalCard({ id, nome, especie, sexo, idadeAnos, onOpen, onEdit,
         <div className="min-w-0">
           <p className="text-lg font-bold leading-tight text-[#4d4d4d]">{nome}</p>
           <div className="mt-1 space-y-0.5">
-            <p className="text-sm text-slate-500">Espécie: {especie}</p>
-            <p className="text-sm text-slate-500">Sexo: {(sexo === 'Femea' ? 'Fêmea' : sexo) || 'Não informado'}</p>
-            <p className="text-sm text-slate-500">Idade: {idadeAnos ? `${idadeAnos} ano(s)` : 'Não informada'}</p>
+            <p className="text-sm text-slate-700">Espécie: {especie}</p>
+            <p className="text-sm text-slate-700">Sexo: {(sexo === 'Femea' ? 'Fêmea' : sexo) || 'Não informado'}</p>
+            <p className="text-sm text-slate-700">Idade: {idadeAnos ? `${idadeAnos} ano(s)` : 'Não informada'}</p>
           </div>
         </div>
 

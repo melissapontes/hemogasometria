@@ -5,7 +5,9 @@
       "Bash(supabase db:*)",
       "Bash(npm run:*)",
       "Bash(xargs sed:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(supabase --help)",
+      "Bash(supabase status:*)"
     ]
   }
 }

@@ -1075,9 +1075,9 @@ export function AnimalDetailsPage() {
           <article className="rounded-3xl border border-slate-200/90 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px]">
             <p className="text-lg font-bold leading-tight text-[#4d4d4d]">{animal.nome}</p>
             <div className="mt-1 space-y-0.5">
-              <p className="text-sm text-slate-500">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
-              <p className="text-sm text-slate-500">Sexo: {(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Não informado'}</p>
-              <p className="text-sm text-slate-500">Idade: {animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Não informada'}</p>
+              <p className="text-sm text-slate-700">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
+              <p className="text-sm text-slate-700">Sexo: {(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Não informado'}</p>
+              <p className="text-sm text-slate-700">Idade: {animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Não informada'}</p>
             </div>
           </article>
         )}
@@ -1094,7 +1094,7 @@ export function AnimalDetailsPage() {
       {!isLoading && !errorMessage && animal ? (
         <section className="space-y-4">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-[#4d4d4d]">Resultados do exame</h3>
+            <h3 className="text-lg font-semibold text-white">Resultados do exame</h3>
           </div>
 
           {extractedValues ? (
@@ -1403,7 +1403,7 @@ export function AnimalDetailsPage() {
       )}
 
       <Separator className="my-4" />
-      <Link className="text-sm font-medium text-cyan-700 hover:underline" to="/dashboard">
+      <Link className="text-sm font-medium text-white hover:underline" to="/dashboard">
         Ir para lista de animais
       </Link>
 
