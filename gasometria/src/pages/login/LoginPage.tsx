@@ -33,12 +33,6 @@ export function LoginPage() {
 
   if (user) return <Navigate to={redirectTo} replace />
 
-  function switchTab(newTab: Tab) {
-    setTab(newTab)
-    setError('')
-    setSuccessMessage('')
-  }
-
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
