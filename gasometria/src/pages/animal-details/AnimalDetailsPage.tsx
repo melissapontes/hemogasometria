@@ -16,6 +16,7 @@ import {
   TextInput,
 } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
+import { getSpeciesDefaultReferences, mergeWithDefaults } from '../../lib/species-references'
 import { clearStoredAuthSession, supabase } from '../../lib/supabase'
 import type { Animal } from '../../types/animals'
 import { ParameterRangeBar } from './components/ParameterRangeBar'
@@ -443,12 +444,15 @@ export function AnimalDetailsPage() {
   const [selectedHistoryExam, setSelectedHistoryExam] = useState<ExamHistoryRecord | null>(null)
   const [pendingDocumentPath, setPendingDocumentPath] = useState<string | null>(null)
   const [editingContext, setEditingContext] = useState<{ source: 'latest' } | { source: 'history'; id: number } | null>(null)
+  const speciesDefaults = getSpeciesDefaultReferences(animal ? getAnimalTypeName(animal.animal_types) : null)
+  const effectiveReferences = mergeWithDefaults(extractedReferences, speciesDefaults) as typeof extractedReferences
+
   const extractedHco3 = extractedValues?.hco3 ?? null
   const extractedPco2 = extractedValues?.pco2 ?? null
   const extractedNa = extractedValues?.na ?? null
   const extractedCloro = extractedValues?.cloro ?? null
   const extractedPh = extractedValues?.ph ?? null
-  const phReference = extractedReferences.ph
+  const phReference = effectiveReferences.ph
   const phReferenceBounds = resolveReferenceBounds(phReference)
   const correctedChlorideFormula = getCorrectedChlorideFormula(
     animal ? getAnimalTypeName(animal.animal_types) : null,
@@ -480,8 +484,8 @@ export function AnimalDetailsPage() {
             ? 'Alcalemia'
             : 'Dentro da faixa de referência'
 
-  const hco3ReferenceBounds = resolveReferenceBounds(extractedReferences.hco3)
-  const pco2ReferenceBounds = resolveReferenceBounds(extractedReferences.pco2)
+  const hco3ReferenceBounds = resolveReferenceBounds(effectiveReferences.hco3)
+  const pco2ReferenceBounds = resolveReferenceBounds(effectiveReferences.pco2)
 
   function getDirection(value: number | null, min: number | null, max: number | null): 'low' | 'high' | 'normal' | null {
     if (value === null) return null
@@ -517,9 +521,19 @@ export function AnimalDetailsPage() {
 
   useEffect(() => {
     void loadAnimal()
-    void loadLatestExam()
-    void loadExamHistory()
+    void loadExamsInOrder()
   }, [animalId, user?.id])
+
+  async function loadExamsInOrder() {
+    await loadLatestExam()
+    // Se após carregar não houver latest, promove o mais recente do histórico
+    const { data } = await supabase
+      .from('animal_latest_exams')
+      .select('id')
+      .eq('animal_id', animalId ?? '')
+      .maybeSingle()
+    await loadExamHistory(!data)
+  }
 
   async function loadAnimal() {
     if (!animalId) {
@@ -627,7 +641,7 @@ export function AnimalDetailsPage() {
     setExtractedReferences(normalizedExam.references)
   }
 
-  async function loadExamHistory() {
+  async function loadExamHistory(promoteIfNoLatest = false) {
     if (!animalId || !user) {
       setExamHistory([])
       return
@@ -645,21 +659,36 @@ export function AnimalDetailsPage() {
       return
     }
 
-    setExamHistory(
-      data.map((row) => {
-        const normalized = normalizeExamPayload(row.extracted_values)
-        return {
-          id: row.id as number,
-          extractedValues: normalized.values,
-          extractedReferences: normalized.references,
-          examDate: normalized.examDate,
-          bloodType: normalized.bloodType,
-          documentPath: normalized.documentPath,
-          sourceFileName: (row.source_file_name as string | null) ?? null,
-          createdAt: row.created_at as string,
-        }
-      }),
-    )
+    const history = data.map((row) => {
+      const normalized = normalizeExamPayload(row.extracted_values)
+      return {
+        id: row.id as number,
+        extractedValues: normalized.values,
+        extractedReferences: normalized.references,
+        examDate: normalized.examDate,
+        bloodType: normalized.bloodType,
+        documentPath: normalized.documentPath,
+        sourceFileName: (row.source_file_name as string | null) ?? null,
+        createdAt: row.created_at as string,
+      }
+    })
+
+    setExamHistory(history)
+
+    if (promoteIfNoLatest && history.length > 0) {
+      const next = history[0]
+      await saveLatestExam(
+        next.extractedValues,
+        next.extractedReferences,
+        next.sourceFileName,
+        next.examDate,
+        next.bloodType,
+        next.documentPath,
+        false,
+      )
+      setExtractedValues(next.extractedValues)
+      setExtractedReferences(next.extractedReferences)
+    }
   }
 
   async function saveLatestExam(
@@ -669,6 +698,7 @@ export function AnimalDetailsPage() {
     examDate: string | null,
     bloodType: BloodType | null,
     documentPath: string | null,
+    addToHistory = true,
   ) {
     if (!animalId || !user) {
       return
@@ -720,8 +750,10 @@ export function AnimalDetailsPage() {
         document_path: documentPath,
       },
     }
-    await supabase.from('animal_exam_history').insert(historyPayload)
-    void loadExamHistory()
+    if (addToHistory) {
+      await supabase.from('animal_exam_history').insert(historyPayload)
+      void loadExamHistory()
+    }
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -979,9 +1011,25 @@ export function AnimalDetailsPage() {
   async function handleDeleteLatestExam() {
     if (!animalId || !window.confirm('Apagar o exame salvo? Esta ação não pode ser desfeita.')) return
     await supabase.from('animal_latest_exams').delete().eq('animal_id', animalId)
-    setLatestExam(null)
-    setExtractedValues(null)
-    setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
+
+    const next = examHistory[0] ?? null
+    if (next) {
+      await saveLatestExam(
+        next.extractedValues,
+        next.extractedReferences,
+        next.sourceFileName,
+        next.examDate,
+        next.bloodType,
+        next.documentPath,
+        false,
+      )
+      setExtractedValues(next.extractedValues)
+      setExtractedReferences(next.extractedReferences)
+    } else {
+      setLatestExam(null)
+      setExtractedValues(null)
+      setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
+    }
   }
 
   async function handleDeleteHistoryExam(id: number) {
@@ -1020,8 +1068,8 @@ export function AnimalDetailsPage() {
         {animal && (
           <article className="rounded-3xl border border-slate-200/90 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px]">
             <p className="text-lg font-bold leading-tight text-slate-900">{animal.nome}</p>
-            <p className="mt-1 text-sm text-slate-500">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
-            <div className="mt-2 space-y-0.5">
+            <div className="mt-1 space-y-0.5">
+              <p className="text-sm text-slate-500">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
               <p className="text-sm text-slate-500">Sexo: {(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Não informado'}</p>
               <p className="text-sm text-slate-500">Idade: {animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Não informada'}</p>
             </div>
@@ -1106,7 +1154,7 @@ export function AnimalDetailsPage() {
                 )}
                 <ul className="mt-3 grid grid-cols-1 gap-2">
                     {EXAM_PARAMETER_FIELDS.map((field) => {
-                      const reference = extractedReferences[field.key]
+                      const reference = effectiveReferences[field.key]
                       const referenceBounds = resolveReferenceBounds(reference)
                       const patientValue = extractedValues[field.key]
 
@@ -1116,11 +1164,11 @@ export function AnimalDetailsPage() {
                           className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
                         >
                           {/* Nome do exame destacado */}
-                          <p className="text-xs font-extrabold tracking-wide text-emerald-700">
+                          <p className="text-xs font-extrabold tracking-wide" style={{ color: '#4d4d4d' }}>
                             {field.label}{field.unit ? ` (${field.unit})` : ''}
                           </p>
                           {/* Resultado extraído destacado */}
-                          <p className="mt-1 text-lg font-extrabold text-sky-700">
+                          <p className="mt-1 text-3xl font-extrabold text-sky-700">
                             {patientValue === null ? 'Não encontrado' : patientValue}
                             {field.key === 'ph' && referenceBounds.min !== null && patientValue !== null && patientValue < referenceBounds.min && (
                               <span className="ml-2 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
@@ -1214,6 +1262,7 @@ export function AnimalDetailsPage() {
                               )
                             }
 
+                            const isFromMachine = extractedReferences[field.key]?.min !== null || extractedReferences[field.key]?.max !== null
                             return (
                               <div className="mt-2">
                                 <ParameterRangeBar
@@ -1222,6 +1271,9 @@ export function AnimalDetailsPage() {
                                   min={referenceBounds.min}
                                   patientValue={patientValue}
                                 />
+                                {isFromMachine && (
+                                  <p className="mt-1 text-[10px] text-slate-400">Referência da máquina</p>
+                                )}
                               </div>
                             )
                           })()}
@@ -1489,7 +1541,7 @@ export function AnimalDetailsPage() {
             <ul className="space-y-2">
               {EXAM_PARAMETER_FIELDS.map((field) => (
                 <li key={field.key} className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm">
-                  <p className="text-xs font-medium tracking-wide text-amber-700">{field.label}</p>
+                  <p className="text-xs font-medium tracking-wide" style={{ color: '#4d4d4d' }}>{field.label}</p>
                   <div className="mt-1 space-y-1.5">
                     <label className="text-xs font-semibold tracking-wide text-slate-700">Resultado</label>
                     <TextInput
@@ -1498,8 +1550,10 @@ export function AnimalDetailsPage() {
                     onChange={(event) => handleReviewValueChange(field.key, event.target.value)}
                     />
                   </div>
-                  <p className="mt-2">
-                    <span className="font-semibold">Ref:</span> {formatReferenceValue(pendingReviewReferences[field.key])}
+                  <p className="mt-2 text-xs" style={{ color: '#4d4d4d' }}>
+                    <span className="font-semibold">Ref:</span> {formatReferenceValue(
+                      mergeWithDefaults(pendingReviewReferences, speciesDefaults)[field.key] ?? pendingReviewReferences[field.key]
+                    )}
                   </p>
                 </li>
               ))}

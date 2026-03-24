@@ -16,7 +16,7 @@ function formatValue(value: number, decimals?: number): string {
   return decimals !== undefined ? value.toFixed(decimals) : String(value)
 }
 
-export function ParameterRangeBar({ label, min, max, patientValue, patientLabel = 'Paciente', refText, forcedVisualMin, forcedVisualMax, barColor = '#1b9bb6', labelDecimals, labelColor = '#047857' }: ParameterRangeBarProps) {
+export function ParameterRangeBar({ label, min, max, patientValue, patientLabel = 'Paciente', refText, forcedVisualMin, forcedVisualMax, barColor = '#1b9bb6', labelDecimals, labelColor = '#4d4d4d' }: ParameterRangeBarProps) {
   if (min === null || max === null || max <= min) {
     return <p className="text-xs text-slate-500">Faixa da máquina indisponível para {label.toLowerCase()}.</p>
   }
@@ -33,24 +33,9 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
   const patientPercent = rawPatientPercent === null ? null : Math.min(98, Math.max(2, rawPatientPercent))
 
   return (
-    <div className="space-y-2">
-      {/* Labels min/max acima da barra */}
-      <div className="relative h-4 mt-4">
-        <span
-          className="absolute -translate-x-1/2 text-[10px] font-semibold"
-          style={{ left: `${machineMinPercent}%`, color: labelColor }}
-        >
-          {formatValue(min, labelDecimals)}
-        </span>
-        <span
-          className="absolute -translate-x-1/2 text-[10px] font-semibold"
-          style={{ left: `${machineMaxPercent}%`, color: labelColor }}
-        >
-          {formatValue(max, labelDecimals)}
-        </span>
-      </div>
-      {/* Barra */}
-      <div className="relative h-3 rounded-full bg-slate-200">
+    <div>
+      {/* Barra com espaço acima para o pin do paciente */}
+      <div className="relative mt-6 h-3 rounded-full bg-slate-200">
         {/* Faixa de referência da máquina */}
         <div
           className="absolute h-full rounded-full"
@@ -73,7 +58,23 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
           </>
         ) : null}
       </div>
-      {/* Removido: Min maq/Max maq */}
+
+      {/* Labels min/max abaixo da barra */}
+      <div className="relative mt-3 h-4">
+        <span
+          className="absolute -translate-x-1/2 text-xs font-semibold"
+          style={{ left: `${machineMinPercent}%`, color: labelColor }}
+        >
+          {formatValue(min, labelDecimals)}
+        </span>
+        <span
+          className="absolute -translate-x-1/2 text-xs font-semibold"
+          style={{ left: `${machineMaxPercent}%`, color: labelColor }}
+        >
+          {formatValue(max, labelDecimals)}
+        </span>
+      </div>
+
       {refText && (
         <div className="text-[13px] text-slate-700 mt-1">{refText}</div>
       )}
