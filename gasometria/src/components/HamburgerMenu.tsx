@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Menu, X, Camera } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { supabase } from '../lib/supabase'
 import { Button } from './ui/Button'
@@ -223,8 +224,15 @@ export function HamburgerMenu({ onSignOut }: { onSignOut: () => Promise<void> })
           </div>
         </div>
 
-        {/* Footer — Sign out */}
-        <div className="border-t border-slate-200 px-5 py-4">
+        {/* Footer */}
+        <div className="border-t border-slate-200 px-5 py-4 space-y-3">
+          <Link
+            className="block text-center text-xs text-slate-400 hover:text-slate-600 hover:underline"
+            to="/terms"
+            onClick={() => setIsOpen(false)}
+          >
+            Termos de Uso
+          </Link>
           <Button
             className="w-full"
             type="button"

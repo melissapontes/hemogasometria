@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { AnimalDetailsPage } from './pages/animal-details'
 import { DashboardPage } from './pages/dashboard'
 import { LoginPage } from './pages/login'
+import { TermsPage } from './pages/terms/TermsPage'
 
 type PublicRouteProps = {
   children: ReactNode
@@ -62,6 +63,7 @@ export function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/terms" element={<TermsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

@@ -1,5 +1,5 @@
 ﻿import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Button, Card, CardBody, CardHeader, TextInput } from '../../components/ui'
 import { BloodDropIcon } from '../../components/ui/BloodDropIcon'
 import { useAuth } from '../../auth/AuthProvider'
@@ -37,7 +37,7 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[#36494f] px-3 py-6 sm:px-6">
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-[#36494f] px-3 py-6 sm:px-6">
       <Card className="w-full max-w-md border-cyan-100 bg-white/95 shadow-[0_18px_60px_-26px_rgba(2,44,68,0.45)]">
         <CardHeader className="space-y-1 px-6">
           <div className="flex flex-col items-center text-center">
@@ -87,6 +87,12 @@ export function LoginPage() {
           </form>
         </CardBody>
       </Card>
+      <p className="mt-4 text-center text-xs text-white/50">
+        Ao entrar, você concorda com os{' '}
+        <Link className="text-white/80 underline hover:text-white" to="/terms">
+          Termos de Uso
+        </Link>
+      </p>
     </main>
   )
 }
