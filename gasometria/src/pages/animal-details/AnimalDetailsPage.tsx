@@ -476,6 +476,42 @@ export function AnimalDetailsPage() {
       ? (extractedNa + extractedK) - (extractedHco3 + extractedCloro)
       : null
 
+  const effectiveAnionGap = extractedAnionGap ?? calculatedAnionGap
+
+  const agRefMin = effectiveReferences.anion_gap?.min ?? null
+  const agRefMax = effectiveReferences.anion_gap?.max ?? null
+
+  type AgClassification = 'high' | 'normal' | 'low' | null
+  const agClassification: AgClassification =
+    effectiveAnionGap === null || agRefMin === null || agRefMax === null
+      ? null
+      : effectiveAnionGap > agRefMax
+        ? 'high'
+        : effectiveAnionGap < agRefMin
+          ? 'low'
+          : 'normal'
+
+  const agInterpretation: { label: string; color: string; causes: string } | null =
+    agClassification === 'high'
+      ? {
+          label: 'Ânion Gap elevado',
+          color: '#dc2626',
+          causes: 'Acidose orgânica: lactato ↑, cetoacidose, uremia, intoxicações (etilenoglicol, salicilatos)',
+        }
+      : agClassification === 'normal'
+        ? {
+            label: 'Ânion Gap normal',
+            color: '#059669',
+            causes: 'Acidose hiperclorêmica: diarreia, hipoadrenocorticismo, dilucional, acidose tubular renal',
+          }
+        : agClassification === 'low'
+          ? {
+              label: 'Ânion Gap baixo',
+              color: '#d97706',
+              causes: 'Suspeitar hipoalbuminemia. AG pode estar subestimado — considerar correção pela albumina.',
+            }
+          : null
+
   const phStatus =
     extractedPh === null
       ? 'Não calculado (pH não encontrado).'
@@ -1298,6 +1334,29 @@ export function AnimalDetailsPage() {
                                   </p>
                                 </>
                               )}
+                            </div>
+                          )}
+                          {field.key === 'anion_gap' && agInterpretation && (
+                            <div className="mt-3 rounded-xl border px-3 py-2.5" style={{ borderColor: agInterpretation.color + '40', backgroundColor: agInterpretation.color + '10' }}>
+                              <p className="text-xs font-semibold mb-1" style={{ color: agInterpretation.color }}>
+                                {agInterpretation.label}
+                              </p>
+                              <p className="text-[11px] text-slate-600 leading-relaxed">
+                                {agInterpretation.causes}
+                              </p>
+                              <div className="mt-2 flex items-center justify-between">
+                                {agRefMin !== null && agRefMax !== null && (
+                                  <p className="text-[11px] text-slate-400">
+                                    Ref.: {agRefMin}–{agRefMax} mEq/L
+                                  </p>
+                                )}
+                                <Link
+                                  className="text-[11px] text-cyan-700 hover:underline"
+                                  to="/references#anion-gap"
+                                >
+                                  Ver referência →
+                                </Link>
+                              </div>
                             </div>
                           )}
                           {field.key === 'cloro' && (
