@@ -44,7 +44,7 @@ export function LoginPage() {
             <BloodDropIcon size={40} className="mb-2" />
             <p className="text-2xl font-bold tracking-widest" style={{ color: '#39484f' }}>GasoVet</p>
           </div>
-          <h1 className="text-base font-semibold text-slate-900">Entrar</h1>
+          <h1 className="text-base font-semibold text-[#4d4d4d]">Entrar</h1>
         </CardHeader>
 
         <CardBody className="px-6 pb-6 pt-4">

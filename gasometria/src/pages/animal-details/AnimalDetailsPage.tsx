@@ -330,7 +330,9 @@ function formatDateTime(value: string): string {
     return value
   }
 
-  return parsed.toLocaleString('pt-BR')
+  const date = parsed.toLocaleDateString('pt-BR')
+  const time = parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${date} às ${time} h`
 }
 
 function formatExamValue(value: number): string {
@@ -508,7 +510,7 @@ export function AnimalDetailsPage() {
   const winterCompensation =
     acidBaseBase === 'Acidose metabólica' && expectedPco2Min !== null && expectedPco2Max !== null && extractedPco2 !== null
       ? extractedPco2 >= expectedPco2Min && extractedPco2 <= expectedPco2Max
-        ? 'compensação adequada'
+        ? 'compensação respiratória adequada'
         : extractedPco2 > expectedPco2Max
           ? 'acidose respiratória associada'
           : 'alcalose respiratória associada'
@@ -1060,14 +1062,14 @@ export function AnimalDetailsPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="truncate text-xl font-semibold leading-tight text-slate-900 sm:text-2xl">
+          <h1 className="truncate text-xl font-semibold leading-tight text-[#4d4d4d] sm:text-2xl">
             {animal?.nome ?? 'Animal'}
           </h1>
         </div>
 
         {animal && (
           <article className="rounded-3xl border border-slate-200/90 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px]">
-            <p className="text-lg font-bold leading-tight text-slate-900">{animal.nome}</p>
+            <p className="text-lg font-bold leading-tight text-[#4d4d4d]">{animal.nome}</p>
             <div className="mt-1 space-y-0.5">
               <p className="text-sm text-slate-500">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
               <p className="text-sm text-slate-500">Sexo: {(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Não informado'}</p>
@@ -1088,7 +1090,7 @@ export function AnimalDetailsPage() {
       {!isLoading && !errorMessage && animal ? (
         <section className="space-y-4">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-slate-900">Resultados do exame</h3>
+            <h3 className="text-lg font-semibold text-[#4d4d4d]">Resultados do exame</h3>
           </div>
 
           {extractedValues ? (
@@ -1144,7 +1146,7 @@ export function AnimalDetailsPage() {
                 ) : null}
                 {acidBaseInterpretation && (
                   <div className={`mt-3 rounded-xl px-4 py-3 bg-white border ${acidBaseInterpretation.startsWith('Acidose') ? 'border-red-400' : 'border-blue-400'}`}>
-                    <p className="text-xs font-semibold tracking-wide mb-0.5 text-slate-900">
+                    <p className="text-xs font-semibold tracking-wide mb-0.5 text-[#4d4d4d]">
                       Interpretação ácido-base
                     </p>
                     <p className={`text-base font-bold ${acidBaseInterpretation.startsWith('Acidose') ? 'text-red-700' : 'text-blue-700'}`}>
@@ -1161,7 +1163,7 @@ export function AnimalDetailsPage() {
                       return (
                         <li
                           key={field.key}
-                          className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-900"
+                          className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-sm text-[#4d4d4d]"
                         >
                           {/* Nome do exame destacado */}
                           <p className="text-xs font-extrabold tracking-wide" style={{ color: '#4d4d4d' }}>
@@ -1340,7 +1342,7 @@ export function AnimalDetailsPage() {
 
       {examHistory.length > 0 && (
         <section className="mt-8 space-y-3">
-          <h3 className="text-lg font-semibold text-slate-900">Histórico de exames</h3>
+          <h3 className="text-lg font-semibold text-[#4d4d4d]">Histórico de exames</h3>
           <ul className="space-y-2">
             {examHistory.map((exam) => (
               <li key={exam.id}>
@@ -1529,7 +1531,7 @@ export function AnimalDetailsPage() {
               <select
                 value={reviewBloodType}
                 onChange={(e) => setReviewBloodType(e.target.value as BloodType | '')}
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-[#4d4d4d] shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
               >
                 <option value="">Selecione</option>
                 <option value="venoso">Venoso</option>

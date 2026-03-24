@@ -16,7 +16,7 @@ export function DashboardHeader({ userEmail, onCreateAnimal, onSignOut }: Dashbo
             <BloodDropIcon size={28} />
             <p className="text-xs tracking-[0.22em]" style={{ color: '#39484f' }}>GasoVet</p>
           </div>
-          <h1 className="text-[1.55rem] font-bold leading-tight text-slate-900">Animais</h1>
+          <h1 className="text-[1.55rem] font-bold leading-tight text-[#4d4d4d]">Animais</h1>
           <p className="text-xs text-slate-500">Usuário: {userEmail || 'Não identificado'}</p>
         </div>
 
