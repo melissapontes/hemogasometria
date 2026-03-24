@@ -2,6 +2,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
+import { HamburgerMenu } from '../../components/HamburgerMenu'
 import {
   AlertMessage,
   Button,
@@ -417,7 +418,7 @@ function getCorrectedChlorideFormula(animalTypeName: string | null): CorrectedCh
 
 export function AnimalDetailsPage() {
   const { animalId } = useParams()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [animal, setAnimal] = useState<Animal | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -1052,19 +1053,22 @@ export function AnimalDetailsPage() {
 
   return (
     <PageContainer maxWidthClassName="max-w-4xl">
-      <section className="mb-4 border-b border-slate-200/80 pb-4">
-        <div className="mb-3 flex items-center gap-2">
-          <button
-            aria-label="Voltar"
-            className="flex items-center justify-center rounded-full p-1 text-slate-600 hover:bg-slate-200/60"
-            type="button"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <h1 className="truncate text-xl font-semibold leading-tight text-[#4d4d4d] sm:text-2xl">
-            {animal?.nome ?? 'Animal'}
-          </h1>
+      <section className="mb-4 border-b border-white/20 pb-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              aria-label="Voltar"
+              className="flex shrink-0 items-center justify-center rounded-full p-1 text-white hover:bg-white/20"
+              type="button"
+              onClick={() => navigate('/dashboard')}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <h1 className="truncate text-xl font-semibold leading-tight text-white sm:text-2xl">
+              {animal?.nome ?? 'Animal'}
+            </h1>
+          </div>
+          <HamburgerMenu onSignOut={signOut} />
         </div>
 
         {animal && (

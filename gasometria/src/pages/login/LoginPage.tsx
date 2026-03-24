@@ -37,7 +37,7 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-[#cfd9da] px-3 py-6 sm:px-6">
+    <main className="flex min-h-dvh items-center justify-center bg-[#36494f] px-3 py-6 sm:px-6">
       <Card className="w-full max-w-md border-cyan-100 bg-white/95 shadow-[0_18px_60px_-26px_rgba(2,44,68,0.45)]">
         <CardHeader className="space-y-1 px-6">
           <div className="flex flex-col items-center text-center">

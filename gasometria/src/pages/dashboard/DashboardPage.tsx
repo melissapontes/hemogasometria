@@ -1,7 +1,7 @@
-﻿import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
-import { AlertMessage, Button, PageContainer } from '../../components/ui'
+import { AlertMessage, Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, PageContainer } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
 import { supabase } from '../../lib/supabase'
 import { AnimalCard } from './components/AnimalCard'
@@ -26,6 +26,9 @@ export function DashboardPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [form, setForm] = useState<AnimalFormState>(initialAnimalFormState)
   const [isLegacySchema, setIsLegacySchema] = useState(false)
+  const [editingAnimalId, setEditingAnimalId] = useState<string | null>(null)
+  const [deletingAnimal, setDeletingAnimal] = useState<AnimalWithSpecies | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const formattedAnimals = useMemo<AnimalWithSpecies[]>(() => {
     return animals.map((animal) => ({
@@ -87,16 +90,31 @@ export function DashboardPage() {
 
   function openModal() {
     setForm(initialAnimalFormState)
+    setEditingAnimalId(null)
+    setErrorMessage(null)
+    setIsModalOpen(true)
+  }
+
+  function openEditModal(animalId: string) {
+    const animal = animals.find((a) => a.id === animalId)
+    if (!animal) return
+    setForm({
+      nome: animal.nome,
+      animal_type_id: animal.animal_type_id ? String(animal.animal_type_id) : '',
+      sexo: animal.sexo ?? '',
+      idade_anos: animal.idade_anos != null ? String(animal.idade_anos) : '',
+      peso_kg: animal.peso_kg != null ? String(animal.peso_kg) : '',
+      observacoes: animal.observacoes ?? '',
+    })
+    setEditingAnimalId(animalId)
     setErrorMessage(null)
     setIsModalOpen(true)
   }
 
   function closeModal() {
-    if (isSaving) {
-      return
-    }
-
+    if (isSaving) return
     setIsModalOpen(false)
+    setEditingAnimalId(null)
   }
 
   function handleFormChange(field: keyof AnimalFormState, value: string) {
@@ -133,16 +151,23 @@ export function DashboardPage() {
 
     const idadeAnos = form.idade_anos ? Number(form.idade_anos) : null
     const pesoKg = form.peso_kg ? Number(form.peso_kg) : null
-
-    const { error } = await supabase.from('animals').insert({
+    const payload = {
       nome: form.nome.trim(),
       animal_type_id: Number(form.animal_type_id),
       sexo: form.sexo.trim() || null,
       idade_anos: Number.isNaN(idadeAnos) ? null : idadeAnos,
       peso_kg: Number.isNaN(pesoKg) ? null : pesoKg,
       observacoes: form.observacoes.trim() || null,
-      user_id: user.id,
-    })
+    }
+
+    let error
+    if (editingAnimalId) {
+      const result = await supabase.from('animals').update(payload).eq('id', editingAnimalId)
+      error = result.error
+    } else {
+      const result = await supabase.from('animals').insert({ ...payload, user_id: user.id })
+      error = result.error
+    }
 
     if (error) {
       setErrorMessage(error.message)
@@ -153,6 +178,23 @@ export function DashboardPage() {
     await loadDashboardData()
     setIsSaving(false)
     setIsModalOpen(false)
+    setEditingAnimalId(null)
+  }
+
+  async function handleDeleteAnimal() {
+    if (!deletingAnimal) return
+    setIsDeleting(true)
+
+    const { error } = await supabase.from('animals').delete().eq('id', deletingAnimal.id)
+
+    if (error) {
+      setErrorMessage(error.message)
+    } else {
+      await loadDashboardData()
+    }
+
+    setIsDeleting(false)
+    setDeletingAnimal(null)
   }
 
   return (
@@ -189,6 +231,11 @@ export function DashboardPage() {
               nome={animal.nome}
               sexo={animal.sexo}
               onOpen={(animalId) => navigate(`/animals/${animalId}`)}
+              onEdit={openEditModal}
+              onDelete={(animalId) => {
+                const found = formattedAnimals.find((a) => a.id === animalId)
+                if (found) setDeletingAnimal(found)
+              }}
             />
           ))}
         </div>
@@ -196,6 +243,7 @@ export function DashboardPage() {
 
       <CreateAnimalModal
         animalTypes={animalTypes}
+        editingAnimalId={editingAnimalId}
         form={form}
         isOpen={isModalOpen}
         isSaving={isSaving}
@@ -203,7 +251,31 @@ export function DashboardPage() {
         onFormChange={handleFormChange}
         onSubmit={handleCreateAnimal}
       />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={Boolean(deletingAnimal)} onOpenChange={(open) => { if (!open && !isDeleting) setDeletingAnimal(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir animal</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-slate-600">
+            Tem certeza que deseja excluir <span className="font-semibold text-[#4d4d4d]">{deletingAnimal?.nome}</span>? Esta ação não pode ser desfeita e todos os exames do animal serão perdidos.
+          </p>
+          <DialogFooter>
+            <Button className="w-full sm:w-auto" disabled={isDeleting} type="button" onClick={() => setDeletingAnimal(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="w-full sm:w-auto border-0 bg-red-500 text-white hover:bg-red-600"
+              disabled={isDeleting}
+              type="button"
+              onClick={() => void handleDeleteAnimal()}
+            >
+              {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   )
 }
-

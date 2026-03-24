@@ -19,6 +19,7 @@ type CreateAnimalModalProps = {
   animalTypes: AnimalType[]
   isOpen: boolean
   isSaving: boolean
+  editingAnimalId?: string | null
   onClose: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onFormChange: (field: keyof AnimalFormState, value: string) => void
@@ -29,16 +30,18 @@ export function CreateAnimalModal({
   animalTypes,
   isOpen,
   isSaving,
+  editingAnimalId,
   onClose,
   onSubmit,
   onFormChange,
 }: CreateAnimalModalProps) {
+  const isEditing = Boolean(editingAnimalId)
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cadastrar novo animal</DialogTitle>
-          <DialogDescription>Preencha os campos para criar a ficha do paciente.</DialogDescription>
+          <DialogTitle>{isEditing ? 'Editar animal' : 'Cadastrar novo animal'}</DialogTitle>
+          <DialogDescription>{isEditing ? 'Altere os dados do paciente.' : 'Preencha os campos para criar a ficha do paciente.'}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit}>
@@ -121,7 +124,7 @@ export function CreateAnimalModal({
               Cancelar
             </Button>
             <Button className="w-full sm:w-auto" disabled={isSaving} type="submit" variant="primary">
-              {isSaving ? 'Salvando...' : 'Salvar animal'}
+              {isSaving ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Salvar animal'}
             </Button>
           </DialogFooter>
         </form>
