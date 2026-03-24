@@ -1287,7 +1287,7 @@ export function AnimalDetailsPage() {
       ) : null}
 
       {examHistory.length > 0 && (
-        <section className="space-y-3">
+        <section className="mt-8 space-y-3">
           <h3 className="text-lg font-semibold text-slate-900">Histórico de exames</h3>
           <ul className="space-y-2">
             {examHistory.map((exam) => (
