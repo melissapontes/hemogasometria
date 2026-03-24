@@ -226,13 +226,22 @@ export function HamburgerMenu({ onSignOut }: { onSignOut: () => Promise<void> })
 
         {/* Footer */}
         <div className="border-t border-slate-200 px-5 py-4 space-y-3">
-          <Link
-            className="block text-center text-xs text-slate-400 hover:text-slate-600 hover:underline"
-            to="/terms"
-            onClick={() => setIsOpen(false)}
-          >
-            Termos de Uso
-          </Link>
+          <div className="flex justify-center gap-4">
+            <Link
+              className="text-xs text-slate-400 hover:text-slate-600 hover:underline"
+              to="/terms"
+              onClick={() => setIsOpen(false)}
+            >
+              Termos de Uso
+            </Link>
+            <Link
+              className="text-xs text-slate-400 hover:text-slate-600 hover:underline"
+              to="/privacy"
+              onClick={() => setIsOpen(false)}
+            >
+              Privacidade
+            </Link>
+          </div>
           <Button
             className="w-full"
             type="button"

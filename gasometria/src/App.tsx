@@ -7,6 +7,7 @@ import { AnimalDetailsPage } from './pages/animal-details'
 import { DashboardPage } from './pages/dashboard'
 import { LoginPage } from './pages/login'
 import { TermsPage } from './pages/terms/TermsPage'
+import { PrivacyPage } from './pages/privacy/PrivacyPage'
 
 type PublicRouteProps = {
   children: ReactNode
@@ -64,6 +65,7 @@ export function App() {
         }
       />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

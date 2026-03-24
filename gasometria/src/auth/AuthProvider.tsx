@@ -7,6 +7,7 @@ type AuthContextValue = {
   user: User | null
   isLoading: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string, dataNascimento: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -81,6 +82,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
 
         return { error: error?.message ?? null }
+      },
+      async signUp(email: string, password: string, dataNascimento: string) {
+        const { data, error } = await supabase.auth.signUp({ email, password })
+
+        if (error) return { error: error.message }
+
+        // Salva data de nascimento no perfil imediatamente após criação
+        if (data.user) {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            data_nascimento: dataNascimento,
+            updated_at: new Date().toISOString(),
+          })
+        }
+
+        return { error: null }
       },
       async signOut() {
         await supabase.auth.signOut()
