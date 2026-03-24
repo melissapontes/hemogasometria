@@ -146,6 +146,13 @@ export function HamburgerMenu({ onSignOut }: { onSignOut: () => Promise<void> })
                 <Camera size={10} />
               </div>
             </button>
+            <input
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              type="file"
+              onChange={handlePhotoChange}
+            />
             <div className="min-w-0">
               <p className="truncate font-semibold text-[#4d4d4d]">
                 {profile.nome || 'Sem nome'}
