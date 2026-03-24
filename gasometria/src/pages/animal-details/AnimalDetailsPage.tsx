@@ -447,6 +447,8 @@ export function AnimalDetailsPage() {
   const [selectedHistoryExam, setSelectedHistoryExam] = useState<ExamHistoryRecord | null>(null)
   const [pendingDocumentPath, setPendingDocumentPath] = useState<string | null>(null)
   const [editingContext, setEditingContext] = useState<{ source: 'latest' } | { source: 'history'; id: number } | null>(null)
+  const [albumina, setAlbumina] = useState<string>('')
+  const [fosforo, setFosforo] = useState<string>('')
   const speciesDefaults = getSpeciesDefaultReferences(animal ? getAnimalTypeName(animal.animal_types) : null)
   const effectiveReferences = mergeWithDefaults(extractedReferences, speciesDefaults) as typeof extractedReferences
 
@@ -511,6 +513,24 @@ export function AnimalDetailsPage() {
               causes: 'Suspeitar hipoalbuminemia. AG pode estar subestimado — considerar correção pela albumina.',
             }
           : null
+
+  const animalTypeNorm = animal ? normalizeAnimalTypeName(getAnimalTypeName(animal.animal_types) ?? '') : ''
+  const albuminaNum = albumina !== '' ? Number(albumina.replace(',', '.')) : null
+  const fosforoNum = fosforo !== '' ? Number(fosforo.replace(',', '.')) : null
+
+  const agCorrAlbumina: number | null =
+    effectiveAnionGap !== null && albuminaNum !== null && Number.isFinite(albuminaNum)
+      ? (animalTypeNorm === 'cao' || animalTypeNorm === 'canina' || animalTypeNorm === 'cachorro')
+        ? effectiveAnionGap + 0.42 * (3.77 - albuminaNum)
+        : (animalTypeNorm === 'gato' || animalTypeNorm === 'felina' || animalTypeNorm === 'felino')
+          ? effectiveAnionGap + 0.41 * (3.3 - albuminaNum)
+          : null
+      : null
+
+  const agCorrFosforo: number | null =
+    effectiveAnionGap !== null && fosforoNum !== null && Number.isFinite(fosforoNum)
+      ? effectiveAnionGap + (2.52 - 0.58 * fosforoNum)
+      : null
 
   const phStatus =
     extractedPh === null
@@ -1356,6 +1376,50 @@ export function AnimalDetailsPage() {
                                 >
                                   Ver referência →
                                 </Link>
+                              </div>
+                            </div>
+                          )}
+                          {field.key === 'anion_gap' && (
+                            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 space-y-3">
+                              <p className="text-xs font-semibold text-slate-500 tracking-wide">Correção do Ânion Gap</p>
+                              <div>
+                                <label className="mb-1 block text-[11px] font-medium text-slate-500">Albumina</label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-[#4d4d4d] outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-300"
+                                    placeholder="0,0"
+                                    type="text"
+                                    value={albumina}
+                                    onChange={(e) => setAlbumina(e.target.value)}
+                                  />
+                                  <span className="text-[11px] text-slate-400">g/dL</span>
+                                </div>
+                                {agCorrAlbumina !== null && (
+                                  <p className="mt-1.5 text-xs text-slate-700">
+                                    AG<sub>alb</sub> = <span className="font-semibold">{formatExamValue(agCorrAlbumina)} mEq/L</span>
+                                  </p>
+                                )}
+                                {albumina !== '' && agCorrAlbumina === null && effectiveAnionGap !== null && (
+                                  <p className="mt-1 text-[11px] text-slate-400">Fórmula não disponível para esta espécie.</p>
+                                )}
+                              </div>
+                              <div>
+                                <label className="mb-1 block text-[11px] font-medium text-slate-500">Fósforo (Pi)</label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    className="w-24 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-[#4d4d4d] outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-300"
+                                    placeholder="0,0"
+                                    type="text"
+                                    value={fosforo}
+                                    onChange={(e) => setFosforo(e.target.value)}
+                                  />
+                                  <span className="text-[11px] text-slate-400">mg/dL</span>
+                                </div>
+                                {agCorrFosforo !== null && (
+                                  <p className="mt-1.5 text-xs text-slate-700">
+                                    AG<sub>fos</sub> = <span className="font-semibold">{formatExamValue(agCorrFosforo)} mEq/L</span>
+                                  </p>
+                                )}
                               </div>
                             </div>
                           )}
