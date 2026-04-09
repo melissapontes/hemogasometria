@@ -1128,7 +1128,7 @@ export function AnimalDetailsPage() {
         </div>
 
         {animal && (
-          <article className="rounded-3xl border border-slate-200/90 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px]">
+          <article className="rounded-3xl border border-violet-500 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px]">
             <p className="text-lg font-bold leading-tight text-[#4d4d4d]">{animal.nome}</p>
             <div className="mt-1 space-y-0.5">
               <p className="text-sm text-slate-700">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
@@ -1154,7 +1154,7 @@ export function AnimalDetailsPage() {
           </div>
 
           {extractedValues ? (
-            <div className="rounded-2xl border border-emerald-200 bg-[#36494f] p-4">
+            <div className="rounded-2xl border border-violet-500 bg-[#36494f] p-4">
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="text-sm font-semibold text-white">
                     {latestExam ? 'Último exame salvo' : 'Valores extraídos do exame'}

@@ -14,7 +14,7 @@ type AnimalCardProps = {
 
 export function AnimalCard({ id, nome, especie, sexo, idadeAnos, onOpen, onEdit, onDelete }: AnimalCardProps) {
   return (
-    <article className="rounded-3xl border border-slate-200/90 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px] transition hover:-translate-y-0.5 hover:bg-white/90">
+    <article className="rounded-3xl border border-violet-500 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px] transition hover:-translate-y-0.5 hover:bg-white/90">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-lg font-bold leading-tight text-[#4d4d4d]">{nome}</p>
