@@ -1,4 +1,4 @@
-﻿import * as React from 'react'
+import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '../../lib/utils'
@@ -12,13 +12,13 @@ export function DialogContent({ className, children, ...props }: DialogPrimitive
       <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-slate-950/55 backdrop-blur-[1px]" />
       <DialogPrimitive.Content
         className={cn(
-          'fixed inset-x-3 bottom-3 z-50 max-h-[92vh] w-auto overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl sm:left-1/2 sm:top-1/2 sm:w-[calc(100%-2rem)] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2',
+          'fixed inset-x-3 bottom-3 z-50 max-h-[92vh] w-auto overflow-y-auto rounded-3xl border border-white/10 bg-[#3a3b40] p-5 shadow-2xl sm:left-1/2 sm:top-1/2 sm:w-[calc(100%-2rem)] sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2',
           className,
         )}
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1 text-slate-500 hover:bg-slate-100">
+        <DialogPrimitive.Close className="absolute right-3 top-3 rounded-md p-1 text-slate-300 hover:bg-white/10">
           <X className="h-4 w-4" />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -31,11 +31,11 @@ export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLD
 }
 
 export function DialogTitle({ className, ...props }: DialogPrimitive.DialogTitleProps) {
-  return <DialogPrimitive.Title className={cn('text-lg font-semibold text-[#4d4d4d]', className)} {...props} />
+  return <DialogPrimitive.Title className={cn('text-lg font-semibold text-white', className)} {...props} />
 }
 
 export function DialogDescription({ className, ...props }: DialogPrimitive.DialogDescriptionProps) {
-  return <DialogPrimitive.Description className={cn('mt-1 text-sm text-slate-500', className)} {...props} />
+  return <DialogPrimitive.Description className={cn('mt-1 text-sm text-slate-300', className)} {...props} />
 }
 
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
