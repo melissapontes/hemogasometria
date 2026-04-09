@@ -1,5 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 
 :root {
   font-family: "Roboto", sans-serif;
@@ -7,14 +7,16 @@
   text-rendering: geometricPrecision;
 }
 
-body {
-  margin: 0;
-  min-height: 100dvh;
-  background: #303136;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@layer base {
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: #303136 !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-#root {
-  min-height: 100dvh;
+  #root {
+    min-height: 100dvh;
+  }
 }
