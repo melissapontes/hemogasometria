@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { Card, CardBody } from './components/ui'
 import { useAuth } from './auth/AuthProvider'
@@ -19,7 +19,7 @@ function PublicRoute({ children }: PublicRouteProps) {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-dvh items-center justify-center bg-[#36494f] px-4">
+      <main className="flex min-h-dvh items-center justify-center bg-[#303136] px-4">
         <Card className="w-full max-w-md border-slate-200 bg-white/90 shadow-xl">
           <CardBody className="flex flex-row items-center justify-center gap-3 p-8 text-slate-700">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-cyan-600" />
