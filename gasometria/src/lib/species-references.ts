@@ -19,19 +19,20 @@ const DOG_REFERENCES: PartialSpeciesReferences = {
   anion_gap: { raw: '12–24',       min: 12,    max: 24    },
 }
 
-// Referências equinos — fonte: tabela fornecida por Melissa Pontes (03/2026)
-// Obs.: Ca++ na tabela refere-se ao cálcio total (mEq/L), não iCa — omitido pois o app usa iCa (mmol/L)
+// Referências equinos — fonte: Kaneko, Clinical Biochemistry of Domestic Animals (2008)
 const HORSE_REFERENCES: PartialSpeciesReferences = {
-  ph:        { raw: '7,32–7,44',   min: 7.32,  max: 7.44  },
-  pco2:      { raw: '38–46',       min: 38,    max: 46    },
-  po2:       { raw: '38–42',       min: 38,    max: 42    },
-  be:        { raw: '-5–+5',       min: -5,    max: 5     },
-  hco3:      { raw: '24–30',       min: 24,    max: 30    },
-  na:        { raw: '132–146',     min: 132,   max: 146   },
-  k:         { raw: '2,6–5,0',     min: 2.6,   max: 5.0   },
-  cloro:     { raw: '99–109',      min: 99,    max: 109   },
-  lactato:   { raw: '1,1–1,8',     min: 1.1,   max: 1.8   },
-  anion_gap: { raw: '10–26',       min: 10,    max: 26    },
+  ph:        { raw: '7,35–7,45',  min: 7.35,  max: 7.45  },
+  pco2:      { raw: '40',         min: 40,    max: 40    },
+  po2:       { raw: '90–100',     min: 90,    max: 100   },
+  tco2:      { raw: '26',         min: 26,    max: 26    },
+  hco3:      { raw: '24',         min: 24,    max: 24    },
+  be:        { raw: '-3–3',       min: -3,    max: 3     },
+  so2:       { raw: '97–100',     min: 97,    max: 100   },
+  na:        { raw: '135–145',    min: 135,   max: 145   },
+  k:         { raw: '3–4',        min: 3,     max: 4     },
+  cloro:     { raw: '95–105',     min: 95,    max: 105   },
+  ica:       { raw: '1,3–1,5',    min: 1.3,   max: 1.5   },
+  anion_gap: { raw: '8–15',       min: 8,     max: 15    },
 }
 
 // Referências do gato: usar as do cão temporariamente até referência específica ser fornecida,
