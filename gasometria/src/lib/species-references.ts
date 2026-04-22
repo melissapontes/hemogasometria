@@ -35,6 +35,22 @@ const HORSE_REFERENCES: PartialSpeciesReferences = {
   anion_gap: { raw: '8–15',       min: 8,     max: 15    },
 }
 
+// Referências bovinos — fonte: Kaneko, Clinical Biochemistry of Domestic Animals (2008)
+// Obs.: iCa aparece como "4 5.5" na tabela impressa (possível erro gráfico) — omitido até confirmação
+const BOVINE_REFERENCES: PartialSpeciesReferences = {
+  ph:        { raw: '7,35–7,45',  min: 7.35,  max: 7.45  },
+  pco2:      { raw: '40',         min: 40,    max: 40    },
+  po2:       { raw: '90–100',     min: 90,    max: 100   },
+  tco2:      { raw: '26',         min: 26,    max: 26    },
+  hco3:      { raw: '24',         min: 24,    max: 24    },
+  be:        { raw: '-3–3',       min: -3,    max: 3     },
+  so2:       { raw: '97–100',     min: 97,    max: 100   },
+  na:        { raw: '135–145',    min: 135,   max: 145   },
+  k:         { raw: '3–5',        min: 3,     max: 5     },
+  cloro:     { raw: '95–105',     min: 95,    max: 105   },
+  anion_gap: { raw: '14–20',      min: 14,    max: 20    },
+}
+
 // Referências do gato: usar as do cão temporariamente até referência específica ser fornecida,
 // exceto Ânion Gap que tem fonte própria (Torrente Artero, Vet Clin Small Anim, 2016)
 const CAT_REFERENCES: PartialSpeciesReferences = {
@@ -62,6 +78,7 @@ export function getSpeciesDefaultReferences(animalTypeName: string | null): Part
   if (key === 'cao' || key === 'canina' || key === 'cachorro') return DOG_REFERENCES
   if (key === 'gato' || key === 'felina' || key === 'felino') return CAT_REFERENCES
   if (key === 'cavalo' || key === 'equino' || key === 'equina' || key === 'egua') return HORSE_REFERENCES
+  if (key === 'bovino' || key === 'bovina' || key === 'vaca' || key === 'boi' || key === 'zebu') return BOVINE_REFERENCES
   return {}
 }
 
