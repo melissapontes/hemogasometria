@@ -29,6 +29,7 @@ export function DashboardPage() {
   const [editingAnimalId, setEditingAnimalId] = useState<string | null>(null)
   const [deletingAnimal, setDeletingAnimal] = useState<AnimalWithSpecies | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [filterSpecies, setFilterSpecies] = useState<string>('')
 
   const formattedAnimals = useMemo<AnimalWithSpecies[]>(() => {
     return animals.map((animal) => ({
@@ -36,6 +37,11 @@ export function DashboardPage() {
       especie: getAnimalTypeName(animal.animal_types),
     }))
   }, [animals])
+
+  const filteredAnimals = useMemo(() => {
+    if (!filterSpecies) return formattedAnimals
+    return formattedAnimals.filter((a) => String(a.animal_type_id) === filterSpecies)
+  }, [formattedAnimals, filterSpecies])
 
   useEffect(() => {
     void loadDashboardData()
@@ -221,8 +227,34 @@ export function DashboardPage() {
       ) : null}
 
       {!isLoading && formattedAnimals.length > 0 ? (
+        <>
+          <div className="mb-4 flex items-center gap-2">
+            <select
+              className="rounded-xl border border-violet-500 bg-[#3a3b40] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-violet-400"
+              value={filterSpecies}
+              onChange={(e) => setFilterSpecies(e.target.value)}
+            >
+              <option value="">Todas as espécies</option>
+              {animalTypes.map((type) => (
+                <option key={type.id} value={String(type.id)}>{type.nome}</option>
+              ))}
+            </select>
+            {filterSpecies ? (
+              <span className="text-xs text-slate-400">
+                {filteredAnimals.length} animal{filteredAnimals.length !== 1 ? 'is' : ''} encontrado{filteredAnimals.length !== 1 ? 's' : ''}
+              </span>
+            ) : null}
+          </div>
+
+          {filteredAnimals.length === 0 ? (
+            <p className="text-sm text-slate-400">Nenhum animal encontrado para esta espécie.</p>
+          ) : null}
+        </>
+      ) : null}
+
+      {!isLoading && filteredAnimals.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {formattedAnimals.map((animal) => (
+          {filteredAnimals.map((animal) => (
             <AnimalCard
               key={animal.id}
               id={animal.id}
