@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
 import { AlertMessage, Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, PageContainer } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
@@ -17,6 +17,7 @@ type AnimalWithSpecies = Animal & {
 export function DashboardPage() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const { typeId } = useParams<{ typeId: string }>()
 
   const [animals, setAnimals] = useState<Animal[]>([])
   const [animalTypes, setAnimalTypes] = useState<AnimalType[]>([])
@@ -29,19 +30,20 @@ export function DashboardPage() {
   const [editingAnimalId, setEditingAnimalId] = useState<string | null>(null)
   const [deletingAnimal, setDeletingAnimal] = useState<AnimalWithSpecies | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [filterSpecies, setFilterSpecies] = useState<string>('')
+
+  const selectedType = useMemo(
+    () => animalTypes.find((t) => String(t.id) === typeId) ?? null,
+    [animalTypes, typeId],
+  )
 
   const formattedAnimals = useMemo<AnimalWithSpecies[]>(() => {
-    return animals.map((animal) => ({
-      ...animal,
-      especie: getAnimalTypeName(animal.animal_types),
-    }))
-  }, [animals])
-
-  const filteredAnimals = useMemo(() => {
-    if (!filterSpecies) return formattedAnimals
-    return formattedAnimals.filter((a) => String(a.animal_type_id) === filterSpecies)
-  }, [formattedAnimals, filterSpecies])
+    return animals
+      .filter((a) => !typeId || String(a.animal_type_id) === typeId)
+      .map((animal) => ({
+        ...animal,
+        especie: getAnimalTypeName(animal.animal_types),
+      }))
+  }, [animals, typeId])
 
   useEffect(() => {
     void loadDashboardData()
@@ -205,7 +207,13 @@ export function DashboardPage() {
 
   return (
     <PageContainer maxWidthClassName="max-w-5xl">
-      <DashboardHeader userEmail={user?.email} onCreateAnimal={openModal} onSignOut={signOut} />
+      <DashboardHeader
+        userEmail={user?.email}
+        speciesName={selectedType?.nome ?? null}
+        onCreateAnimal={openModal}
+        onSignOut={signOut}
+        onBack={() => navigate('/dashboard')}
+      />
 
       {errorMessage ? <AlertMessage message={errorMessage} /> : null}
 
@@ -218,7 +226,7 @@ export function DashboardPage() {
 
       {!isLoading && formattedAnimals.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-slate-300/90 bg-white/55 p-5 text-sm text-slate-600">
-          <p>Nenhum animal cadastrado ainda.</p>
+          <p>Nenhum {selectedType?.nome.toLowerCase() ?? 'animal'} cadastrado ainda.</p>
           <p className="mt-1">Toque em "Novo animal" para criar o primeiro cadastro.</p>
           <Button className="mt-4 w-full sm:w-auto" type="button" variant="primary" onClick={openModal}>
             Cadastrar primeiro animal
@@ -227,34 +235,8 @@ export function DashboardPage() {
       ) : null}
 
       {!isLoading && formattedAnimals.length > 0 ? (
-        <>
-          <div className="mb-4 flex items-center gap-2">
-            <select
-              className="rounded-xl border border-violet-500 bg-[#3a3b40] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-violet-400"
-              value={filterSpecies}
-              onChange={(e) => setFilterSpecies(e.target.value)}
-            >
-              <option value="">Todas as espécies</option>
-              {animalTypes.map((type) => (
-                <option key={type.id} value={String(type.id)}>{type.nome}</option>
-              ))}
-            </select>
-            {filterSpecies ? (
-              <span className="text-xs text-slate-400">
-                {filteredAnimals.length} animal{filteredAnimals.length !== 1 ? 'is' : ''} encontrado{filteredAnimals.length !== 1 ? 's' : ''}
-              </span>
-            ) : null}
-          </div>
-
-          {filteredAnimals.length === 0 ? (
-            <p className="text-sm text-slate-400">Nenhum animal encontrado para esta espécie.</p>
-          ) : null}
-        </>
-      ) : null}
-
-      {!isLoading && filteredAnimals.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {filteredAnimals.map((animal) => (
+          {formattedAnimals.map((animal) => (
             <AnimalCard
               key={animal.id}
               id={animal.id}
@@ -290,8 +272,8 @@ export function DashboardPage() {
           <DialogHeader>
             <DialogTitle>Excluir animal</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600">
-            Tem certeza que deseja excluir <span className="font-semibold text-[#4d4d4d]">{deletingAnimal?.nome}</span>? Esta ação não pode ser desfeita e todos os exames do animal serão perdidos.
+          <p className="text-sm text-white/80">
+            Tem certeza que deseja excluir <span className="font-semibold text-white">{deletingAnimal?.nome}</span>? Esta ação não pode ser desfeita e todos os exames do animal serão perdidos.
           </p>
           <DialogFooter>
             <Button className="w-full sm:w-auto" disabled={isDeleting} type="button" onClick={() => setDeletingAnimal(null)}>

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -562,7 +562,13 @@ export function AnimalDetailsPage() {
     phDir === 'low' && pco2Dir === 'high' ? 'Acidose respiratória' :
     phDir === 'high' && hco3Dir === 'high' ? 'Alcalose metabólica' :
     phDir === 'high' && pco2Dir === 'low' ? 'Alcalose respiratória' :
+    phDir === 'normal' && hco3Dir === 'low' && pco2Dir === 'low'
+      ? 'Distúrbio misto: Acidose metabólica + Alcalose respiratória' :
+    phDir === 'normal' && hco3Dir === 'high' && pco2Dir === 'high'
+      ? 'Distúrbio misto: Alcalose metabólica + Acidose respiratória' :
     null
+
+  const isMixedDisorder = acidBaseBase?.startsWith('Distúrbio misto') ?? false
 
   const winterCompensation =
     acidBaseBase === 'Acidose metabólica' && expectedPco2Min !== null && expectedPco2Max !== null && extractedPco2 !== null
@@ -1205,13 +1211,24 @@ export function AnimalDetailsPage() {
                   </div>
                 ) : null}
                 {acidBaseInterpretation && (
-                  <div className={`mt-3 rounded-xl px-4 py-3 bg-white border ${acidBaseInterpretation.startsWith('Acidose') ? 'border-red-400' : 'border-blue-400'}`}>
+                  <div className={`mt-3 rounded-xl px-4 py-3 bg-white border ${
+                    isMixedDisorder ? 'border-amber-400' :
+                    acidBaseInterpretation.startsWith('Acidose') ? 'border-red-400' : 'border-blue-400'
+                  }`}>
                     <p className="text-xs font-semibold tracking-wide mb-0.5 text-[#4d4d4d]">
                       Interpretação ácido-base
                     </p>
-                    <p className={`text-base font-bold ${acidBaseInterpretation.startsWith('Acidose') ? 'text-red-700' : 'text-blue-700'}`}>
+                    <p className={`text-base font-bold ${
+                      isMixedDisorder ? 'text-amber-700' :
+                      acidBaseInterpretation.startsWith('Acidose') ? 'text-red-700' : 'text-blue-700'
+                    }`}>
                       {acidBaseInterpretation}
                     </p>
+                    {isMixedDisorder && (
+                      <p className="mt-1 text-xs text-amber-600">
+                        O pH está dentro da faixa de referência, mas HCO3 e pCO2 estão ambos alterados — indicando dois distúrbios opostos que se compensam mutuamente.
+                      </p>
+                    )}
                   </div>
                 )}
                 <ul className="mt-3 grid grid-cols-1 gap-2">
@@ -1242,22 +1259,22 @@ export function AnimalDetailsPage() {
                                 Alcalemia
                               </span>
                             )}
-                            {field.key === 'hco3' && acidBaseBase === 'Acidose metabólica' && (
+                            {field.key === 'hco3' && (acidBaseBase === 'Acidose metabólica' || (isMixedDisorder && hco3Dir === 'low')) && (
                               <span className="ml-2 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
                                 Acidose metabólica
                               </span>
                             )}
-                            {field.key === 'hco3' && acidBaseBase === 'Alcalose metabólica' && (
+                            {field.key === 'hco3' && (acidBaseBase === 'Alcalose metabólica' || (isMixedDisorder && hco3Dir === 'high')) && (
                               <span className="ml-2 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
                                 Alcalose metabólica
                               </span>
                             )}
-                            {field.key === 'pco2' && (phDir === 'low' && pco2Dir === 'high' || winterCompensation === 'acidose respiratória associada') && (
+                            {field.key === 'pco2' && (phDir === 'low' && pco2Dir === 'high' || winterCompensation === 'acidose respiratória associada' || (isMixedDisorder && pco2Dir === 'high')) && (
                               <span className="ml-2 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
                                 Acidose respiratória
                               </span>
                             )}
-                            {field.key === 'pco2' && phDir === 'high' && pco2Dir === 'low' && (
+                            {field.key === 'pco2' && (phDir === 'high' && pco2Dir === 'low' || (isMixedDisorder && pco2Dir === 'low')) && (
                               <span className="ml-2 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
                                 Alcalose respiratória
                               </span>
@@ -1536,9 +1553,13 @@ export function AnimalDetailsPage() {
       )}
 
       <Separator className="my-4" />
-      <Link className="text-sm font-medium text-white hover:underline" to="/dashboard">
-        Ir para lista de animais
-      </Link>
+      <button
+        type="button"
+        className="text-sm font-medium text-white hover:underline"
+        onClick={() => navigate(-1)}
+      >
+        ← Voltar para lista
+      </button>
 
       <Dialog open={Boolean(selectedHistoryExam)} onOpenChange={(open) => { if (!open) setSelectedHistoryExam(null) }}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">

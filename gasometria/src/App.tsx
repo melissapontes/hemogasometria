@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { AnimalDetailsPage } from './pages/animal-details'
 import { DashboardPage } from './pages/dashboard'
 import { LoginPage } from './pages/login'
+import { SpeciesSelectionPage } from './pages/species/SpeciesSelectionPage'
 import { TermsPage } from './pages/terms/TermsPage'
 import { PrivacyPage } from './pages/privacy/PrivacyPage'
 import { ReferencesPage } from './pages/references/ReferencesPage'
@@ -51,6 +52,14 @@ export function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route
         path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <SpeciesSelectionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/:typeId"
         element={
           <ProtectedRoute>
             <DashboardPage />
