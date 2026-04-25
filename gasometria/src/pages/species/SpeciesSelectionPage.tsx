@@ -19,7 +19,7 @@ const SPECIES: Species[] = [
     id: 1,
     label: 'Cão',
     emoji: '🐕',
-    subtitle: 'Caninos',
+    subtitle: 'Espécie canina',
     bg: 'linear-gradient(160deg, #7c3aed 0%, #4f46e5 50%, #1e3a5f 100%)',
     accent: '#a78bfa',
     image: '/species/cao.png',
@@ -28,7 +28,7 @@ const SPECIES: Species[] = [
     id: 2,
     label: 'Gato',
     emoji: '🐈',
-    subtitle: 'Felinos',
+    subtitle: 'Espécie felina',
     bg: 'linear-gradient(160deg, #be185d 0%, #9d174d 50%, #1e1b4b 100%)',
     accent: '#f9a8d4',
     image: '/species/gato.png',
@@ -37,16 +37,16 @@ const SPECIES: Species[] = [
     id: 3,
     label: 'Cavalo',
     emoji: '🐎',
-    subtitle: 'Equinos',
+    subtitle: 'Espécie equina',
     bg: 'linear-gradient(160deg, #0369a1 0%, #0c4a6e 50%, #0f172a 100%)',
     accent: '#7dd3fc',
     image: '/species/cavalo.png',
   },
   {
     id: 4,
-    label: 'Bovino',
+    label: 'Boi',
     emoji: '🐄',
-    subtitle: 'Bovinos',
+    subtitle: 'Espécie bovina',
     bg: 'linear-gradient(160deg, #15803d 0%, #166534 50%, #052e16 100%)',
     accent: '#86efac',
     image: '/species/boi.png',
@@ -114,11 +114,8 @@ export function SpeciesSelectionPage() {
       {/* Header */}
       <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-5">
         <div className="flex items-center gap-2">
-          <BloodDropIcon size={24} />
-          <div>
-            <p className="text-xs tracking-[0.22em] text-white/70">GasoVet</p>
-            <p className="text-[11px] text-white/40">{user?.email}</p>
-          </div>
+          <BloodDropIcon size={28} />
+          <p className="text-lg font-bold tracking-[0.18em] text-white">GasoVet</p>
         </div>
         <HamburgerMenu onSignOut={signOut} />
       </header>
