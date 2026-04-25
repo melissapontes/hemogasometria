@@ -3,6 +3,7 @@ import { HamburgerMenu } from '../../../components/HamburgerMenu'
 import { BloodDropIcon } from '../../../components/ui/BloodDropIcon'
 
 type DashboardHeaderProps = {
+  accentColor: string | null
   userEmail?: string
   speciesName: string | null
   onCreateAnimal: () => void
@@ -10,9 +11,14 @@ type DashboardHeaderProps = {
   onBack: () => void
 }
 
-export function DashboardHeader({ userEmail, speciesName, onCreateAnimal, onSignOut, onBack }: DashboardHeaderProps) {
+export function DashboardHeader({ accentColor, userEmail, speciesName, onCreateAnimal, onSignOut, onBack }: DashboardHeaderProps) {
+  const accent = accentColor ?? '#06b6d4'
+
   return (
-    <header className="mb-4 border-b border-white/20 pb-4 sm:mb-5">
+    <header
+      className="mb-4 border-b pb-4 sm:mb-5"
+      style={{ borderColor: `${accent}40` }}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -38,9 +44,13 @@ export function DashboardHeader({ userEmail, speciesName, onCreateAnimal, onSign
 
         <div className="flex items-center gap-2">
           <button
-            className="rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-700 active:scale-[0.99]"
+            className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
             type="button"
             onClick={onCreateAnimal}
+            style={{
+              background: `${accent}cc`,
+              border: `1px solid ${accent}60`,
+            }}
           >
             Novo animal
           </button>

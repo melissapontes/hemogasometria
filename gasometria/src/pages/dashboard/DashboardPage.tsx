@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthProvider'
 import { AlertMessage, Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, PageContainer } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
+import { getSpeciesTheme } from '../../lib/species-themes'
 import { supabase } from '../../lib/supabase'
 import { AnimalCard } from './components/AnimalCard'
 import { CreateAnimalModal } from './components/CreateAnimalModal'
@@ -35,6 +36,8 @@ export function DashboardPage() {
     () => animalTypes.find((t) => String(t.id) === typeId) ?? null,
     [animalTypes, typeId],
   )
+
+  const speciesTheme = getSpeciesTheme(typeId)
 
   const formattedAnimals = useMemo<AnimalWithSpecies[]>(() => {
     return animals
@@ -206,8 +209,9 @@ export function DashboardPage() {
   }
 
   return (
-    <PageContainer maxWidthClassName="max-w-5xl">
+    <PageContainer maxWidthClassName="max-w-5xl" style={speciesTheme ? { background: speciesTheme.bg } : undefined}>
       <DashboardHeader
+        accentColor={speciesTheme?.accent ?? null}
         userEmail={user?.email}
         speciesName={selectedType?.nome ?? null}
         onCreateAnimal={openModal}
@@ -239,6 +243,7 @@ export function DashboardPage() {
           {formattedAnimals.map((animal) => (
             <AnimalCard
               key={animal.id}
+              accentColor={speciesTheme?.accent ?? null}
               id={animal.id}
               idadeAnos={animal.idade_anos}
               especie={animal.especie}

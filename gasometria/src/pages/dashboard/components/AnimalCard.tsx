@@ -1,7 +1,7 @@
 import { Pencil, Trash2 } from 'lucide-react'
-import { Button } from '../../../components/ui'
 
 type AnimalCardProps = {
+  accentColor: string | null
   id: string
   nome: string
   especie: string
@@ -12,23 +12,31 @@ type AnimalCardProps = {
   onDelete: (animalId: string) => void
 }
 
-export function AnimalCard({ id, nome, especie, sexo, idadeAnos, onOpen, onEdit, onDelete }: AnimalCardProps) {
+export function AnimalCard({ accentColor, id, nome, especie, sexo, idadeAnos, onOpen, onEdit, onDelete }: AnimalCardProps) {
+  const accent = accentColor ?? '#06b6d4'
+
   return (
-    <article className="rounded-3xl border border-violet-500 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px] transition hover:-translate-y-0.5 hover:bg-white/90">
+    <article
+      className="rounded-3xl p-4 shadow-lg backdrop-blur-sm transition hover:-translate-y-0.5"
+      style={{
+        background: 'rgba(0,0,0,0.3)',
+        border: `1px solid ${accent}50`,
+      }}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-lg font-bold leading-tight text-[#4d4d4d]">{nome}</p>
+          <p className="text-lg font-bold leading-tight text-white">{nome}</p>
           <div className="mt-1 space-y-0.5">
-            <p className="text-sm text-slate-700">Espécie: {especie}</p>
-            <p className="text-sm text-slate-700">Sexo: {(sexo === 'Femea' ? 'Fêmea' : sexo) || 'Não informado'}</p>
-            <p className="text-sm text-slate-700">Idade: {idadeAnos ? `${idadeAnos} ano(s)` : 'Não informada'}</p>
+            <p className="text-sm text-white/70">Espécie: {especie}</p>
+            <p className="text-sm text-white/70">Sexo: {(sexo === 'Femea' ? 'Fêmea' : sexo) || 'Não informado'}</p>
+            <p className="text-sm text-white/70">Idade: {idadeAnos ? `${idadeAnos} ano(s)` : 'Não informada'}</p>
           </div>
         </div>
 
         <div className="flex shrink-0 gap-1">
           <button
             aria-label="Editar animal"
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-white/40 hover:bg-white/10 hover:text-white/80"
             type="button"
             onClick={() => onEdit(id)}
           >
@@ -36,7 +44,7 @@ export function AnimalCard({ id, nome, especie, sexo, idadeAnos, onOpen, onEdit,
           </button>
           <button
             aria-label="Excluir animal"
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-500"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-white/40 hover:bg-red-500/20 hover:text-red-400"
             type="button"
             onClick={() => onDelete(id)}
           >
@@ -45,9 +53,17 @@ export function AnimalCard({ id, nome, especie, sexo, idadeAnos, onOpen, onEdit,
         </div>
       </div>
 
-      <Button className="mt-4 w-full" type="button" variant="primary" onClick={() => onOpen(id)}>
+      <button
+        className="mt-4 w-full rounded-2xl py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+        type="button"
+        onClick={() => onOpen(id)}
+        style={{
+          background: `${accent}40`,
+          border: `1px solid ${accent}50`,
+        }}
+      >
         Analisar
-      </Button>
+      </button>
     </article>
   )
 }

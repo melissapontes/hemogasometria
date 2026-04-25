@@ -4,54 +4,7 @@ import { useAuth } from '../../auth/AuthProvider'
 import { HamburgerMenu } from '../../components/HamburgerMenu'
 import { BloodDropIcon } from '../../components/ui/BloodDropIcon'
 
-type Species = {
-  id: number
-  label: string
-  emoji: string
-  subtitle: string
-  bg: string
-  accent: string
-  image?: string
-}
-
-const SPECIES: Species[] = [
-  {
-    id: 1,
-    label: 'Cão',
-    emoji: '🐕',
-    subtitle: 'Espécie canina',
-    bg: 'linear-gradient(160deg, #7c3aed 0%, #4f46e5 50%, #1e3a5f 100%)',
-    accent: '#a78bfa',
-    image: '/species/cao.png',
-  },
-  {
-    id: 2,
-    label: 'Gato',
-    emoji: '🐈',
-    subtitle: 'Espécie felina',
-    bg: 'linear-gradient(160deg, #be185d 0%, #9d174d 50%, #1e1b4b 100%)',
-    accent: '#f9a8d4',
-    image: '/species/gato.png',
-  },
-  {
-    id: 3,
-    label: 'Cavalo',
-    emoji: '🐎',
-    subtitle: 'Espécie equina',
-    bg: 'linear-gradient(160deg, #0369a1 0%, #0c4a6e 50%, #0f172a 100%)',
-    accent: '#7dd3fc',
-    image: '/species/cavalo.png',
-  },
-  {
-    id: 4,
-    label: 'Boi',
-    emoji: '🐄',
-    subtitle: 'Espécie bovina',
-    bg: 'linear-gradient(160deg, #15803d 0%, #166534 50%, #052e16 100%)',
-    accent: '#86efac',
-    image: '/species/boi.png',
-  },
-]
+import { SPECIES_THEMES } from '../../lib/species-themes'
 
 export function SpeciesSelectionPage() {
   const navigate = useNavigate()
@@ -138,7 +91,7 @@ export function SpeciesSelectionPage() {
           WebkitOverflowScrolling: 'touch',
         } as React.CSSProperties}
       >
-        {SPECIES.map((species, idx) => (
+        {SPECIES_THEMES.map((species, idx) => (
           <div
             key={species.id}
             data-species-card
@@ -190,23 +143,8 @@ export function SpeciesSelectionPage() {
                 {species.subtitle}
               </div>
 
-              {/* Emoji — only when no image */}
-              {!species.image && (
-                <span
-                  className="block text-center transition-all duration-300"
-                  style={{
-                    fontSize: activeIndex === idx ? '7rem' : '5rem',
-                    filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.4))',
-                  }}
-                  role="img"
-                  aria-label={species.label}
-                >
-                  {species.emoji}
-                </span>
-              )}
-
-              {/* Spacer when image is present */}
-              {species.image && <div className="flex-1" />}
+              {/* Spacer — pushes info to bottom */}
+              <div className="flex-1" />
 
               {/* Bottom info */}
               <div className="w-full">
@@ -231,7 +169,7 @@ export function SpeciesSelectionPage() {
 
       {/* Dots indicator */}
       <div className="flex shrink-0 items-center justify-center gap-2 pb-8">
-        {SPECIES.map((species, idx) => (
+        {SPECIES_THEMES.map((species, idx) => (
           <button
             key={species.id}
             type="button"
