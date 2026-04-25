@@ -55,7 +55,7 @@ const SPECIES: Species[] = [
 
 export function SpeciesSelectionPage() {
   const navigate = useNavigate()
-  const { user, signOut } = useAuth()
+  const { signOut } = useAuth()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const activeIndexRef = useRef(0)
