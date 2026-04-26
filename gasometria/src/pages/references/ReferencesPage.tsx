@@ -114,7 +114,7 @@ export function ReferencesPage() {
   const navigate = useNavigate()
 
   return (
-    <main className="min-h-dvh bg-[#303136] px-3 pb-12 pt-4 sm:px-6 sm:pt-6">
+    <main className="min-h-dvh bg-[#0f0f13] px-3 pb-12 pt-4 sm:px-6 sm:pt-6">
       <div className="mx-auto w-full max-w-2xl">
 
         {/* Header */}

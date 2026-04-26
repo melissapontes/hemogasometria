@@ -106,7 +106,7 @@ export function HamburgerMenu({ onSignOut }: { onSignOut: () => Promise<void> })
         <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setIsOpen(false)} />
       ) : null}
 
-      <div className={`fixed inset-y-0 right-0 z-50 flex w-80 max-w-[90vw] flex-col bg-[#3a3b40] shadow-xl transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 z-50 flex w-80 max-w-[90vw] flex-col shadow-xl transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`} style={{ background: '#0f0f13' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
