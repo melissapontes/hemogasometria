@@ -1116,7 +1116,8 @@ export function AnimalDetailsPage() {
 
   const speciesTheme = getSpeciesTheme(animal?.animal_type_id ? String(animal.animal_type_id) : undefined)
   const accent = speciesTheme?.accent ?? '#a78bfa'
-  const accentBtnStyle = { background: `${accent}30`, border: `1px solid ${accent}40` }
+  const chartColor = speciesTheme?.chartColor ?? accent
+  const accentBtnStyle = { background: `${accent}55`, border: `1px solid ${accent}99` }
 
   return (
     <PageContainer
@@ -1270,7 +1271,7 @@ export function AnimalDetailsPage() {
                             {field.label}{field.unit ? ` (${field.unit})` : ''}
                           </p>
                           {/* Resultado extraído destacado */}
-                          <p className="mt-1 text-3xl font-extrabold text-sky-700">
+                          <p className="mt-1 text-3xl font-extrabold" style={{ color: chartColor }}>
                             {patientValue === null ? 'Não encontrado' : patientValue}
                             {field.key === 'ph' && referenceBounds.min !== null && patientValue !== null && patientValue < referenceBounds.min && (
                               <span className="ml-2 inline-block rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
@@ -1338,6 +1339,8 @@ export function AnimalDetailsPage() {
                                       patientValue={patientValue}
                                       forcedVisualMin={sharedVisualMin}
                                       forcedVisualMax={sharedVisualMax}
+                                      barColor={chartColor}
+                                      pinColor={chartColor}
                                     />
                                   </div>
                                   <div className="mt-5">
@@ -1372,6 +1375,8 @@ export function AnimalDetailsPage() {
                                   max={referenceBounds.max}
                                   min={referenceBounds.min}
                                   patientValue={patientValue}
+                                  barColor={chartColor}
+                                  pinColor={chartColor}
                                 />
                                 {isFromMachine && (
                                   <p className="mt-1 text-[10px] text-slate-400">Referência da máquina</p>
@@ -1634,7 +1639,14 @@ export function AnimalDetailsPage() {
       </Dialog>
 
       <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogContent
+          className="max-h-[90vh] max-w-2xl overflow-y-auto"
+          style={speciesTheme?.image ? {
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 25%',
+          } : undefined}
+        >
           <DialogHeader>
             <DialogTitle>Extrair novo documento</DialogTitle>
             <DialogDescription>Envie foto ou PDF para extrair os parâmetros.</DialogDescription>
@@ -1642,17 +1654,18 @@ export function AnimalDetailsPage() {
 
           <form className="space-y-4" onSubmit={handleSendToAi}>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700" htmlFor="animal-document">
+              <label className="text-sm font-medium text-white/80" htmlFor="animal-document">
                 Documento (PDF ou imagem)
               </label>
               <label
                 htmlFor="animal-document"
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100"
+                className="flex cursor-pointer items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white/80 transition"
+                style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${accent}50` }}
               >
-                <span className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                <span className="rounded-lg px-3 py-1 text-xs font-medium text-white" style={{ background: `${accent}40`, border: `1px solid ${accent}60` }}>
                   Escolher arquivo
                 </span>
-                <span className="truncate text-slate-500">
+                <span className="truncate text-white/60">
                   {selectedFile ? selectedFile.name : 'Nenhum arquivo selecionado'}
                 </span>
               </label>
@@ -1663,18 +1676,28 @@ export function AnimalDetailsPage() {
                 className="sr-only"
                 onChange={handleFileChange}
               />
-              <p className="text-xs text-slate-500">Tamanho máximo: 10MB.</p>
+              <p className="text-xs text-white/40">Tamanho máximo: 10MB.</p>
             </div>
 
-            {fileError ? <p className="text-sm text-red-700">{fileError}</p> : null}
+            {fileError ? <p className="text-sm text-red-400">{fileError}</p> : null}
 
             <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setIsExtractDialogOpen(false)}>
+              <button
+                type="button"
+                className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white/70 transition"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                onClick={() => setIsExtractDialogOpen(false)}
+              >
                 Cancelar
-              </Button>
-              <Button type="submit" disabled={isSendingToAi}>
+              </button>
+              <button
+                type="submit"
+                disabled={isSendingToAi}
+                className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
+                style={accentBtnStyle}
+              >
                 {isSendingToAi ? 'Enviando...' : 'Enviar'}
-              </Button>
+              </button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -1689,7 +1712,14 @@ export function AnimalDetailsPage() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogContent
+          className="max-h-[90vh] max-w-4xl overflow-y-auto"
+          style={speciesTheme?.image ? {
+            backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 25%',
+          } : undefined}
+        >
           <DialogHeader>
             <DialogTitle>{editingContext ? 'Editar exame' : 'Revise e edite antes de confirmar'}</DialogTitle>
             <DialogDescription>
@@ -1700,7 +1730,7 @@ export function AnimalDetailsPage() {
 
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="flex flex-1 flex-col gap-1.5">
-              <label className="text-xs font-semibold tracking-wide text-slate-700">Data do exame</label>
+              <label className="text-xs font-semibold tracking-wide text-white/80">Data do exame</label>
               <TextInput
                 type="date"
                 value={reviewExamDate}
@@ -1708,32 +1738,34 @@ export function AnimalDetailsPage() {
               />
             </div>
             <div className="flex flex-1 flex-col gap-1.5">
-              <label className="text-xs font-semibold tracking-wide text-slate-700">Tipo de sangue</label>
+              <label className="text-xs font-semibold tracking-wide text-white/80">Tipo de sangue</label>
               <select
+                required
                 value={reviewBloodType}
                 onChange={(e) => setReviewBloodType(e.target.value as BloodType | '')}
-                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-[#4d4d4d] shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                className="w-full rounded-md px-3 py-2 text-sm text-white outline-none"
+                style={{ background: '#1e1e2e', border: `1px solid ${accent}70` }}
               >
-                <option value="">Selecione</option>
-                <option value="venoso">Venoso</option>
-                <option value="arterial">Arterial</option>
+                <option value="" className="bg-[#1e1e2e] text-white">Selecione</option>
+                <option value="venoso" className="bg-[#1e1e2e] text-white">Venoso</option>
+                <option value="arterial" className="bg-[#1e1e2e] text-white">Arterial</option>
               </select>
             </div>
           </div>
 
             <ul className="space-y-2">
               {EXAM_PARAMETER_FIELDS.map((field) => (
-                <li key={field.key} className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm">
-                  <p className="text-xs font-medium tracking-wide" style={{ color: '#4d4d4d' }}>{field.label}</p>
+                <li key={field.key} className="rounded-xl px-3 py-2 text-sm" style={{ background: 'rgba(255,255,255,0.07)', border: `1px solid ${accent}30` }}>
+                  <p className="text-xs font-medium tracking-wide text-white/70">{field.label}</p>
                   <div className="mt-1 space-y-1.5">
-                    <label className="text-xs font-semibold tracking-wide text-slate-700">Resultado</label>
+                    <label className="text-xs font-semibold tracking-wide text-white/80">Resultado</label>
                     <TextInput
                     placeholder="Não encontrado"
                     value={reviewDraftValues[field.key]}
                     onChange={(event) => handleReviewValueChange(field.key, event.target.value)}
                     />
                   </div>
-                  <p className="mt-2 text-xs" style={{ color: '#4d4d4d' }}>
+                  <p className="mt-2 text-xs text-white/50">
                     <span className="font-semibold">Ref:</span> {formatReferenceValue(
                       mergeWithDefaults(pendingReviewReferences, speciesDefaults)[field.key] ?? pendingReviewReferences[field.key]
                     )}

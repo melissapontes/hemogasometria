@@ -8,6 +8,7 @@ type ParameterRangeBarProps = {
   forcedVisualMin?: number
   forcedVisualMax?: number
   barColor?: string
+  pinColor?: string
   labelDecimals?: number
   labelColor?: string
 }
@@ -16,7 +17,8 @@ function formatValue(value: number, decimals?: number): string {
   return decimals !== undefined ? value.toFixed(decimals) : String(value)
 }
 
-export function ParameterRangeBar({ label, min, max, patientValue, patientLabel = 'Paciente', refText, forcedVisualMin, forcedVisualMax, barColor = '#1b9bb6', labelDecimals, labelColor = '#4d4d4d' }: ParameterRangeBarProps) {
+export function ParameterRangeBar({ label, min, max, patientValue, patientLabel = 'Paciente', refText, forcedVisualMin, forcedVisualMax, barColor = '#1b9bb6', pinColor, labelDecimals, labelColor = '#4d4d4d' }: ParameterRangeBarProps) {
+  const resolvedPinColor = pinColor ?? barColor
   if (min === null || max === null || max <= min) {
     return <p className="text-xs text-slate-500">Faixa da máquina indisponível para {label.toLowerCase()}.</p>
   }
@@ -50,11 +52,14 @@ export function ParameterRangeBar({ label, min, max, patientValue, patientLabel 
         {patientPercent !== null ? (
           <>
             <div
-              className="absolute top-[-19px] h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-sky-600 shadow"
-              style={{ left: `${patientPercent}%`, zIndex: 3 }}
+              className="absolute top-[-19px] h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white shadow"
+              style={{ left: `${patientPercent}%`, zIndex: 3, backgroundColor: resolvedPinColor }}
               title={`${patientLabel}: ${formatValue(patientValue as number)}`}
             />
-            <div className="absolute top-[-7px] h-3 w-[2px] -translate-x-1/2 bg-sky-600" style={{ left: `${patientPercent}%`, zIndex: 3 }} />
+            <div
+              className="absolute top-[-7px] h-3 w-[2px] -translate-x-1/2"
+              style={{ left: `${patientPercent}%`, zIndex: 3, backgroundColor: resolvedPinColor }}
+            />
           </>
         ) : null}
       </div>
