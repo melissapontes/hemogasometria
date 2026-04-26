@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
 import { HamburgerMenu } from '../../components/HamburgerMenu'
@@ -419,6 +419,7 @@ function getCorrectedChlorideFormula(animalTypeName: string | null): CorrectedCh
 
 export function AnimalDetailsPage() {
   const { animalId } = useParams()
+  const { state } = useLocation()
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [animal, setAnimal] = useState<Animal | null>(null)
@@ -1114,7 +1115,9 @@ export function AnimalDetailsPage() {
     }
   }
 
-  const speciesTheme = getSpeciesTheme(animal?.animal_type_id ? String(animal.animal_type_id) : undefined)
+  const speciesTheme = getSpeciesTheme(
+    animal?.animal_type_id ? String(animal.animal_type_id) : (state?.typeId ?? undefined)
+  )
   const accent = speciesTheme?.accent ?? '#a78bfa'
   const chartColor = speciesTheme?.chartColor ?? accent
   const accentBtnStyle = { background: `${accent}55`, border: `1px solid ${accent}99` }

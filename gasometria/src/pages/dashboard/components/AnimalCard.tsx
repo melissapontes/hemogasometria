@@ -25,7 +25,7 @@ export function AnimalCard({ accentColor, id, nome, especie, sexo, idadeAnos, on
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-lg font-bold leading-tight text-white">{nome}</p>
+          <p className="truncate text-lg font-bold leading-tight text-white">{nome}</p>
           <div className="mt-1 space-y-0.5">
             <p className="text-sm text-white/70">Espécie: {especie}</p>
             <p className="text-sm text-white/70">Sexo: {(sexo === 'Femea' ? 'Fêmea' : sexo) || 'Não informado'}</p>

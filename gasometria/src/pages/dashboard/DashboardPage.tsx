@@ -271,7 +271,7 @@ export function DashboardPage() {
               especie={animal.especie}
               nome={animal.nome}
               sexo={animal.sexo}
-              onOpen={(animalId) => navigate(`/animals/${animalId}`)}
+              onOpen={(animalId) => navigate(`/animals/${animalId}`, { state: { typeId } })}
               onEdit={openEditModal}
               onDelete={(animalId) => {
                 const found = formattedAnimals.find((a) => a.id === animalId)
