@@ -76,7 +76,7 @@ export function CreateAnimalModal({
           </DialogTitle>
           {isSpeciesLocked && speciesTheme && (
             <p className="mt-1 text-base font-medium" style={{ color: accent }}>
-              Espécie: {speciesTheme.label}
+              Espécie: {speciesTheme.subtitle.replace('Espécie ', '')}
             </p>
           )}
         </DialogHeader>
