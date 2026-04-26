@@ -1115,6 +1115,8 @@ export function AnimalDetailsPage() {
   }
 
   const speciesTheme = getSpeciesTheme(animal?.animal_type_id ? String(animal.animal_type_id) : undefined)
+  const accent = speciesTheme?.accent ?? '#a78bfa'
+  const accentBtnStyle = { background: `${accent}30`, border: `1px solid ${accent}40` }
 
   return (
     <PageContainer
@@ -1181,7 +1183,7 @@ export function AnimalDetailsPage() {
           </div>
 
           {extractedValues ? (
-            <div className="rounded-2xl border border-violet-500 bg-[#36494f] p-4">
+            <div className="p-1">
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="text-sm font-semibold text-white">
                     {latestExam ? 'Último exame salvo' : 'Valores extraídos do exame'}
@@ -1223,8 +1225,8 @@ export function AnimalDetailsPage() {
                       <button
                         type="button"
                         onClick={() => void openDocument(latestExam.documentPath!)}
-                        className="rounded-xl px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:brightness-110 active:scale-95"
-                        style={{ backgroundColor: '#d63a6e' }}
+                        className="rounded-xl px-4 py-2 text-sm font-bold text-white transition active:scale-95"
+                        style={accentBtnStyle}
                       >
                         Ver laudo original
                       </button>
@@ -1500,10 +1502,10 @@ export function AnimalDetailsPage() {
             </p>
           )}
 
-          <Button
-            className="w-full sm:w-auto"
+          <button
+            className="w-full rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
             type="button"
-            variant="primary"
+            style={accentBtnStyle}
             onClick={() => {
               setSelectedFile(null)
               setFileError(null)
@@ -1511,7 +1513,7 @@ export function AnimalDetailsPage() {
             }}
           >
             Extrair novo documento
-          </Button>
+          </button>
         </section>
       ) : null}
 
@@ -1543,8 +1545,8 @@ export function AnimalDetailsPage() {
                       <button
                         type="button"
                         onClick={() => void openDocument(exam.documentPath!)}
-                        className="rounded-xl px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:brightness-110 active:scale-95"
-                        style={{ backgroundColor: '#d63a6e' }}
+                        className="rounded-xl px-3 py-1.5 text-xs font-bold text-white transition active:scale-95"
+                        style={accentBtnStyle}
                       >
                         Ver laudo
                       </button>
