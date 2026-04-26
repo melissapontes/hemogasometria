@@ -1,9 +1,8 @@
-﻿import type { FormEvent } from 'react'
+import type { FormEvent } from 'react'
 import {
   Button,
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -12,6 +11,7 @@ import {
   TextAreaInput,
   TextInput,
 } from '../../../components/ui'
+import type { SpeciesTheme } from '../../../lib/species-themes'
 import type { AnimalFormState, AnimalType } from '../../../types/animals'
 
 type CreateAnimalModalProps = {
@@ -20,9 +20,23 @@ type CreateAnimalModalProps = {
   isOpen: boolean
   isSaving: boolean
   editingAnimalId?: string | null
+  speciesTheme?: SpeciesTheme | null
   onClose: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onFormChange: (field: keyof AnimalFormState, value: string) => void
+}
+
+const COLLAGE_STYLE = {
+  backgroundImage: [
+    'linear-gradient(rgba(0,0,0,0.82), rgba(0,0,0,0.90))',
+    "url('/species/cao.png')",
+    "url('/species/gato.png')",
+    "url('/species/cavalo.png')",
+    "url('/species/boi.png')",
+  ].join(', '),
+  backgroundSize: '100% 100%, 50% 50%, 50% 50%, 50% 50%, 50% 50%',
+  backgroundPosition: '0 0, 0 0, 100% 0, 0 100%, 100% 100%',
+  backgroundRepeat: 'no-repeat' as const,
 }
 
 export function CreateAnimalModal({
@@ -31,115 +45,176 @@ export function CreateAnimalModal({
   isOpen,
   isSaving,
   editingAnimalId,
+  speciesTheme,
   onClose,
   onSubmit,
   onFormChange,
 }: CreateAnimalModalProps) {
   const isEditing = Boolean(editingAnimalId)
+  const accent = speciesTheme?.accent ?? '#a78bfa'
+  const isSpeciesLocked = Boolean(speciesTheme && !isEditing)
+
+  const bgStyle = speciesTheme?.image
+    ? {
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 25%',
+        backgroundRepeat: 'no-repeat' as const,
+      }
+    : COLLAGE_STYLE
+
+  const inputCls = 'w-full rounded-xl border bg-white/10 px-4 py-3 text-base text-white placeholder-white/40 outline-none focus:ring-2 backdrop-blur-sm'
+  const inputStyle = { borderColor: `${accent}50` }
+  const inputFocusStyle = { '--tw-ring-color': accent } as React.CSSProperties
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <DialogContent
-        className="max-h-[90vh] overflow-y-auto"
-        style={{
-          backgroundImage: [
-            'linear-gradient(rgba(0,0,0,0.80), rgba(0,0,0,0.90))',
-            "url('/species/cao.png')",
-            "url('/species/gato.png')",
-            "url('/species/cavalo.png')",
-            "url('/species/boi.png')",
-          ].join(', '),
-          backgroundSize: '100% 100%, 50% 50%, 50% 50%, 50% 50%, 50% 50%',
-          backgroundPosition: '0 0, 0 0, 100% 0, 0 100%, 100% 100%',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
+      <DialogContent className="max-h-[90vh] overflow-y-auto" style={bgStyle}>
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar animal' : 'Cadastrar novo animal'}</DialogTitle>
-          <DialogDescription>{isEditing ? 'Altere os dados do paciente.' : 'Preencha os campos para criar a ficha do paciente.'}</DialogDescription>
+          <DialogTitle className="text-xl font-bold text-white">
+            {isEditing ? 'Editar animal' : 'Cadastrar novo animal'}
+          </DialogTitle>
+          {isSpeciesLocked && speciesTheme && (
+            <p className="mt-1 text-base font-medium" style={{ color: accent }}>
+              Espécie: {speciesTheme.label}
+            </p>
+          )}
         </DialogHeader>
 
         <form onSubmit={onSubmit}>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <FormField id="animal-nome" label="Nome *">
-              <TextInput
+          <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2">
+
+            {/* Nome */}
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-base font-semibold text-white" htmlFor="animal-nome">
+                Nome *
+              </label>
+              <input
+                className={inputCls}
                 id="animal-nome"
                 placeholder="Ex.: Thor"
                 required
+                style={inputStyle}
+                type="text"
                 value={form.nome}
-                onChange={(event) => onFormChange('nome', event.target.value)}
+                onChange={(e) => onFormChange('nome', e.target.value)}
               />
-            </FormField>
+            </div>
 
-            <FormField id="animal-especie" label="Espécie *">
-              <SelectInput
-                id="animal-especie"
-                required
-                value={form.animal_type_id}
-                onChange={(event) => onFormChange('animal_type_id', event.target.value)}
-              >
-                <option value="">Selecione</option>
-                {animalTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.nome}
-                  </option>
-                ))}
-              </SelectInput>
-            </FormField>
+            {/* Espécie — só mostra se não estiver travada */}
+            {!isSpeciesLocked && (
+              <div>
+                <label className="mb-2 block text-base font-semibold text-white" htmlFor="animal-especie">
+                  Espécie *
+                </label>
+                <select
+                  className={inputCls}
+                  id="animal-especie"
+                  required
+                  style={inputStyle}
+                  value={form.animal_type_id}
+                  onChange={(e) => onFormChange('animal_type_id', e.target.value)}
+                >
+                  <option value="" className="bg-[#2a2a2e] text-white">Selecione</option>
+                  {animalTypes.map((type) => (
+                    <option key={type.id} value={type.id} className="bg-[#2a2a2e] text-white">
+                      {type.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            <FormField id="animal-sexo" label="Sexo *">
-              <SelectInput
+            {/* Sexo */}
+            <div>
+              <label className="mb-2 block text-base font-semibold text-white" htmlFor="animal-sexo">
+                Sexo *
+              </label>
+              <select
+                className={inputCls}
                 id="animal-sexo"
                 required
+                style={inputStyle}
                 value={form.sexo}
-                onChange={(event) => onFormChange('sexo', event.target.value)}
+                onChange={(e) => onFormChange('sexo', e.target.value)}
               >
-                <option value="">Selecione</option>
-                <option value="Macho">Macho</option>
-                <option value="Femea">Fêmea</option>
-              </SelectInput>
-            </FormField>
+                <option value="" className="bg-[#2a2a2e] text-white">Selecione</option>
+                <option value="Macho" className="bg-[#2a2a2e] text-white">Macho</option>
+                <option value="Femea" className="bg-[#2a2a2e] text-white">Fêmea</option>
+              </select>
+            </div>
 
-            <FormField id="animal-idade" label="Idade (anos)">
-              <TextInput
+            {/* Idade */}
+            <div>
+              <label className="mb-2 block text-base font-semibold text-white" htmlFor="animal-idade">
+                Idade (anos)
+              </label>
+              <input
+                className={inputCls}
                 id="animal-idade"
                 min={0}
                 placeholder="Ex.: 3"
                 step={1}
+                style={inputStyle}
                 type="number"
                 value={form.idade_anos}
-                onChange={(event) => onFormChange('idade_anos', event.target.value)}
+                onChange={(e) => onFormChange('idade_anos', e.target.value)}
               />
-            </FormField>
+            </div>
 
-            <FormField id="animal-peso" label="Peso (kg)">
-              <TextInput
+            {/* Peso */}
+            <div>
+              <label className="mb-2 block text-base font-semibold text-white" htmlFor="animal-peso">
+                Peso (kg)
+              </label>
+              <input
+                className={inputCls}
                 id="animal-peso"
                 min={0}
                 placeholder="Ex.: 12.5"
                 step={0.1}
+                style={inputStyle}
                 type="number"
                 value={form.peso_kg}
-                onChange={(event) => onFormChange('peso_kg', event.target.value)}
+                onChange={(e) => onFormChange('peso_kg', e.target.value)}
               />
-            </FormField>
+            </div>
 
-            <FormField className="md:col-span-2" id="animal-observacoes" label="Observacoes">
-              <TextAreaInput
+            {/* Observações */}
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-base font-semibold text-white" htmlFor="animal-observacoes">
+                Observações
+              </label>
+              <textarea
+                className={inputCls}
                 id="animal-observacoes"
-                placeholder="Informacoes clinicas relevantes..."
+                placeholder="Informações clínicas relevantes..."
+                rows={3}
+                style={inputStyle}
                 value={form.observacoes}
-                onChange={(event) => onFormChange('observacoes', event.target.value)}
+                onChange={(e) => onFormChange('observacoes', e.target.value)}
               />
-            </FormField>
+            </div>
           </div>
 
-          <DialogFooter>
-            <Button className="w-full sm:w-auto" disabled={isSaving} type="button" onClick={onClose}>
+          <DialogFooter className="mt-6">
+            <button
+              className="w-full rounded-2xl py-3 text-base font-semibold text-white/70 transition hover:text-white sm:w-auto sm:px-6"
+              disabled={isSaving}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+              type="button"
+              onClick={onClose}
+            >
               Cancelar
-            </Button>
-            <Button className="w-full sm:w-auto" disabled={isSaving} type="submit" variant="primary">
+            </button>
+            <button
+              className="w-full rounded-2xl py-3 text-base font-bold text-white transition active:scale-[0.98] sm:w-auto sm:px-8"
+              disabled={isSaving}
+              style={{ background: `${accent}40`, border: `1px solid ${accent}60` }}
+              type="submit"
+            >
               {isSaving ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Salvar animal'}
-            </Button>
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -613,7 +613,7 @@ export function AnimalDetailsPage() {
 
     const { data, error } = await supabase
       .from('animals')
-      .select('id, nome, sexo, idade_anos, peso_kg, observacoes, created_at, animal_types(nome)')
+      .select('id, nome, sexo, idade_anos, peso_kg, observacoes, created_at, animal_type_id, animal_types(nome)')
       .eq('id', animalId)
       .maybeSingle()
 

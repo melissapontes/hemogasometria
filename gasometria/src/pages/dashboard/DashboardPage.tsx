@@ -100,7 +100,7 @@ export function DashboardPage() {
   }
 
   function openModal() {
-    setForm(initialAnimalFormState)
+    setForm({ ...initialAnimalFormState, animal_type_id: typeId ?? '' })
     setEditingAnimalId(null)
     setErrorMessage(null)
     setIsModalOpen(true)
@@ -288,6 +288,7 @@ export function DashboardPage() {
         form={form}
         isOpen={isModalOpen}
         isSaving={isSaving}
+        speciesTheme={speciesTheme}
         onClose={closeModal}
         onFormChange={handleFormChange}
         onSubmit={handleCreateAnimal}
