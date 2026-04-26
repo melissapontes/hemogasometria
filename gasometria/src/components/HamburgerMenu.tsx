@@ -157,7 +157,6 @@ export function HamburgerMenu({ onSignOut }: { onSignOut: () => Promise<void> })
               <p className="truncate font-semibold text-white">
                 {profile.nome || 'Sem nome'}
               </p>
-              <p className="truncate text-sm text-slate-300">{user?.email}</p>
             </div>
           </div>
 

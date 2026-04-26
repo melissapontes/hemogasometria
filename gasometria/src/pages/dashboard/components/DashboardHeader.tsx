@@ -4,14 +4,13 @@ import { BloodDropIcon } from '../../../components/ui/BloodDropIcon'
 
 type DashboardHeaderProps = {
   accentColor: string | null
-  userEmail?: string
   speciesName: string | null
   onCreateAnimal: () => void
   onSignOut: () => Promise<void>
   onBack: () => void
 }
 
-export function DashboardHeader({ accentColor, userEmail, speciesName, onCreateAnimal, onSignOut, onBack }: DashboardHeaderProps) {
+export function DashboardHeader({ accentColor, speciesName, onCreateAnimal, onSignOut, onBack }: DashboardHeaderProps) {
   const accent = accentColor ?? '#06b6d4'
 
   return (
@@ -36,20 +35,19 @@ export function DashboardHeader({ accentColor, userEmail, speciesName, onCreateA
               <p className="text-xs tracking-[0.22em] text-white/90">GasoVet</p>
             </div>
             <h1 className="text-[1.55rem] font-bold leading-tight text-white">
-              {speciesName ?? 'Animais'}
+              {speciesName ? `Espécie ${speciesName}` : 'Animais'}
             </h1>
-            <p className="text-xs text-white/60">Usuário: {userEmail || 'Não identificado'}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99]"
+            className="rounded-2xl px-4 py-2 text-sm font-semibold text-white transition active:scale-[0.99]"
             type="button"
             onClick={onCreateAnimal}
             style={{
-              background: `${accent}cc`,
-              border: `1px solid ${accent}60`,
+              background: `${accent}30`,
+              border: `1px solid ${accent}40`,
             }}
           >
             Novo animal

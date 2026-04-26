@@ -58,8 +58,8 @@ export function AnimalCard({ accentColor, id, nome, especie, sexo, idadeAnos, on
         type="button"
         onClick={() => onOpen(id)}
         style={{
-          background: `${accent}40`,
-          border: `1px solid ${accent}50`,
+          background: `${accent}30`,
+          border: `1px solid ${accent}40`,
         }}
       >
         Analisar

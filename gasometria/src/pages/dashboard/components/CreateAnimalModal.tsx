@@ -38,7 +38,21 @@ export function CreateAnimalModal({
   const isEditing = Boolean(editingAnimalId)
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto"
+        style={{
+          backgroundImage: [
+            'linear-gradient(rgba(0,0,0,0.80), rgba(0,0,0,0.90))',
+            "url('/species/cao.png')",
+            "url('/species/gato.png')",
+            "url('/species/cavalo.png')",
+            "url('/species/boi.png')",
+          ].join(', '),
+          backgroundSize: '100% 100%, 50% 50%, 50% 50%, 50% 50%, 50% 50%',
+          backgroundPosition: '0 0, 0 0, 100% 0, 0 100%, 100% 100%',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Editar animal' : 'Cadastrar novo animal'}</DialogTitle>
           <DialogDescription>{isEditing ? 'Altere os dados do paciente.' : 'Preencha os campos para criar a ficha do paciente.'}</DialogDescription>

@@ -209,10 +209,18 @@ export function DashboardPage() {
   }
 
   return (
-    <PageContainer maxWidthClassName="max-w-5xl" style={speciesTheme ? { background: speciesTheme.bg } : undefined}>
+    <PageContainer
+      maxWidthClassName="max-w-5xl"
+      style={speciesTheme?.image ? {
+        backgroundImage: `url('${speciesTheme.image}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 25%',
+        backgroundRepeat: 'no-repeat',
+      } : speciesTheme ? { background: speciesTheme.bg } : undefined}
+      overlay={speciesTheme ? { background: 'linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.82) 100%)' } : undefined}
+    >
       <DashboardHeader
         accentColor={speciesTheme?.accent ?? null}
-        userEmail={user?.email}
         speciesName={selectedType?.nome ?? null}
         onCreateAnimal={openModal}
         onSignOut={signOut}
@@ -222,19 +230,33 @@ export function DashboardPage() {
       {errorMessage ? <AlertMessage message={errorMessage} /> : null}
 
       {isLoading ? (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-3 text-slate-600">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-cyan-600" />
+        <div
+          className="mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-white/70"
+          style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${speciesTheme?.accent ?? '#06b6d4'}30` }}
+        >
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
           Carregando animais...
         </div>
       ) : null}
 
       {!isLoading && formattedAnimals.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-slate-300/90 bg-white/55 p-5 text-sm text-slate-600">
+        <section
+          className="rounded-2xl p-5 text-sm text-white/80"
+          style={{ background: 'rgba(0,0,0,0.25)', border: `1px dashed ${speciesTheme?.accent ?? '#06b6d4'}40` }}
+        >
           <p>Nenhum {selectedType?.nome.toLowerCase() ?? 'animal'} cadastrado ainda.</p>
-          <p className="mt-1">Toque em "Novo animal" para criar o primeiro cadastro.</p>
-          <Button className="mt-4 w-full sm:w-auto" type="button" variant="primary" onClick={openModal}>
+          <p className="mt-1 text-white/50">Toque em "Novo animal" para criar o primeiro cadastro.</p>
+          <button
+            className="mt-4 rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+            type="button"
+            onClick={openModal}
+            style={{
+              background: `${speciesTheme?.accent ?? '#06b6d4'}30`,
+              border: `1px solid ${speciesTheme?.accent ?? '#06b6d4'}40`,
+            }}
+          >
             Cadastrar primeiro animal
-          </Button>
+          </button>
         </section>
       ) : null}
 
