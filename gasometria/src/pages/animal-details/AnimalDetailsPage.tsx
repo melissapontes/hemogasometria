@@ -18,6 +18,7 @@ import {
 } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
 import { getSpeciesDefaultReferences, mergeWithDefaults } from '../../lib/species-references'
+import { getSpeciesTheme } from '../../lib/species-themes'
 import { clearStoredAuthSession, supabase } from '../../lib/supabase'
 import type { Animal } from '../../types/animals'
 import { ParameterRangeBar } from './components/ParameterRangeBar'
@@ -1113,8 +1114,19 @@ export function AnimalDetailsPage() {
     }
   }
 
+  const speciesTheme = getSpeciesTheme(animal?.animal_type_id ? String(animal.animal_type_id) : undefined)
+
   return (
-    <PageContainer maxWidthClassName="max-w-4xl">
+    <PageContainer
+      maxWidthClassName="max-w-4xl"
+      style={speciesTheme?.image ? {
+        backgroundImage: `url('${speciesTheme.image}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 25%',
+        backgroundRepeat: 'no-repeat',
+      } : speciesTheme ? { background: speciesTheme.bg } : undefined}
+      overlay={speciesTheme ? { background: 'linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.82) 100%)' } : undefined}
+    >
       <section className="mb-4 border-b border-white/20 pb-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -1134,20 +1146,29 @@ export function AnimalDetailsPage() {
         </div>
 
         {animal && (
-          <article className="rounded-3xl border border-violet-500 bg-white/75 p-4 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-[1px]">
-            <p className="text-lg font-bold leading-tight text-[#4d4d4d]">{animal.nome}</p>
+          <article
+            className="rounded-3xl p-4 backdrop-blur-sm"
+            style={{
+              background: 'rgba(0,0,0,0.30)',
+              border: `1px solid ${speciesTheme?.accent ?? '#a78bfa'}50`,
+            }}
+          >
+            <p className="text-lg font-bold leading-tight text-white">{animal.nome}</p>
             <div className="mt-1 space-y-0.5">
-              <p className="text-sm text-slate-700">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
-              <p className="text-sm text-slate-700">Sexo: {(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Não informado'}</p>
-              <p className="text-sm text-slate-700">Idade: {animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Não informada'}</p>
+              <p className="text-sm text-white/70">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
+              <p className="text-sm text-white/70">Sexo: {(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Não informado'}</p>
+              <p className="text-sm text-white/70">Idade: {animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Não informada'}</p>
             </div>
           </article>
         )}
       </section>
 
       {isLoading ? (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/70 px-4 py-3 text-slate-600">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
+        <div
+          className="mb-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-white/70"
+          style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${speciesTheme?.accent ?? '#a78bfa'}30` }}
+        >
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
           Carregando...
         </div>
       ) : null}
