@@ -1,15 +1,10 @@
 import type { FormEvent } from 'react'
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  FormField,
-  SelectInput,
-  TextAreaInput,
-  TextInput,
 } from '../../../components/ui'
 import type { SpeciesTheme } from '../../../lib/species-themes'
 import type { AnimalFormState, AnimalType } from '../../../types/animals'
@@ -65,7 +60,6 @@ export function CreateAnimalModal({
 
   const inputCls = 'w-full rounded-xl border bg-white/10 px-4 py-3 text-base text-white placeholder-white/40 outline-none focus:ring-2 backdrop-blur-sm'
   const inputStyle = { borderColor: `${accent}50` }
-  const inputFocusStyle = { '--tw-ring-color': accent } as React.CSSProperties
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
