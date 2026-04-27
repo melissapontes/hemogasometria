@@ -445,6 +445,7 @@ export function AnimalDetailsPage() {
   const [reviewExamDate, setReviewExamDate] = useState<string>('')
   const [reviewBloodType, setReviewBloodType] = useState<BloodType | ''>('')
   const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
+  const [deletingExam, setDeletingExam] = useState<'latest' | number | null>(null)
   const [examHistory, setExamHistory] = useState<ExamHistoryRecord[]>([])
   const [selectedHistoryExam, setSelectedHistoryExam] = useState<ExamHistoryRecord | null>(null)
   const [pendingDocumentPath, setPendingDocumentPath] = useState<string | null>(null)
@@ -1076,7 +1077,7 @@ export function AnimalDetailsPage() {
   }
 
   async function handleDeleteLatestExam() {
-    if (!animalId || !window.confirm('Apagar o exame salvo? Esta ação não pode ser desfeita.')) return
+    if (!animalId) return
     await supabase.from('animal_latest_exams').delete().eq('animal_id', animalId)
 
     const next = examHistory[0] ?? null
@@ -1100,7 +1101,6 @@ export function AnimalDetailsPage() {
   }
 
   async function handleDeleteHistoryExam(id: number) {
-    if (!window.confirm('Apagar este exame do histórico? Esta ação não pode ser desfeita.')) return
     await supabase.from('animal_exam_history').delete().eq('id', id)
     setExamHistory((prev) => prev.filter((e) => e.id !== id))
     setSelectedHistoryExam(null)
@@ -1205,7 +1205,7 @@ export function AnimalDetailsPage() {
                       <button
                         type="button"
                         title="Apagar exame"
-                        onClick={() => void handleDeleteLatestExam()}
+                        onClick={() => setDeletingExam('latest')}
                         className="rounded-lg p-1.5 text-white/70 transition hover:bg-red-500/30 hover:text-red-300"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -1570,7 +1570,7 @@ export function AnimalDetailsPage() {
                     <button
                       type="button"
                       title="Apagar"
-                      onClick={() => void handleDeleteHistoryExam(exam.id)}
+                      onClick={() => setDeletingExam(exam.id)}
                       className="rounded-lg p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1641,7 +1641,7 @@ export function AnimalDetailsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
+      <Dialog open={isExtractDialogOpen} onOpenChange={(open) => { if (!isSendingToAi) setIsExtractDialogOpen(open) }}>
         <DialogContent
           className="max-h-[90vh] max-w-2xl overflow-y-auto"
           style={speciesTheme?.image ? {
@@ -1682,24 +1682,32 @@ export function AnimalDetailsPage() {
               <p className="text-xs text-white/40">Tamanho máximo: 10MB.</p>
             </div>
 
-            {fileError ? <p className="text-sm text-red-400">{fileError}</p> : null}
+            {fileError ? <p className="rounded-xl bg-red-900/40 px-3 py-2 text-sm font-medium text-red-300">{fileError}</p> : null}
+
+            {isSendingToAi && (
+              <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/70">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/80 shrink-0" />
+                Analisando documento com IA... Aguarde, pode levar alguns segundos.
+              </div>
+            )}
 
             <DialogFooter>
               <button
                 type="button"
                 className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white/70 transition"
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                disabled={isSendingToAi}
                 onClick={() => setIsExtractDialogOpen(false)}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                disabled={isSendingToAi}
+                disabled={isSendingToAi || !selectedFile}
                 className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
                 style={accentBtnStyle}
               >
-                {isSendingToAi ? 'Enviando...' : 'Enviar'}
+                {isSendingToAi ? 'Processando...' : 'Enviar'}
               </button>
             </DialogFooter>
           </form>
@@ -1781,6 +1789,31 @@ export function AnimalDetailsPage() {
             <Button type="button" onClick={handleConfirmReviewedExam} disabled={isSavingReviewedExam}>
               {isSavingReviewedExam ? 'Salvando...' : 'Confirmar e salvar exame'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={deletingExam !== null} onOpenChange={(open) => { if (!open) setDeletingExam(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apagar exame</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-white/70">Esta ação não pode ser desfeita. Deseja continuar?</p>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setDeletingExam(null)}>
+              Cancelar
+            </Button>
+            <button
+              type="button"
+              className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              style={{ background: 'rgba(239,68,68,0.3)', border: '1px solid rgba(239,68,68,0.5)' }}
+              onClick={() => {
+                if (deletingExam === 'latest') void handleDeleteLatestExam()
+                else if (typeof deletingExam === 'number') void handleDeleteHistoryExam(deletingExam)
+                setDeletingExam(null)
+              }}
+            >
+              Apagar
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
