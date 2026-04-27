@@ -1646,6 +1646,8 @@ export function AnimalDetailsPage() {
       <Dialog open={isExtractDialogOpen} onOpenChange={(open) => { if (!isSendingToAi) setIsExtractDialogOpen(open) }}>
         <DialogContent
           className="max-h-[90vh] max-w-2xl overflow-y-auto"
+          onInteractOutside={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
           style={speciesTheme?.image ? {
             backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
             backgroundSize: 'cover',
