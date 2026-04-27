@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { BloodDropIcon } from './ui/BloodDropIcon'
-import { Button } from './ui/Button'
 
 type TermsConsentModalProps = {
   onAccept: () => Promise<void>
+  onSignOut: () => Promise<void>
 }
 
-export function TermsConsentModal({ onAccept }: TermsConsentModalProps) {
+export function TermsConsentModal({ onAccept, onSignOut }: TermsConsentModalProps) {
   const [termsChecked, setTermsChecked] = useState(false)
   const [privacyChecked, setPrivacyChecked] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -20,16 +20,21 @@ export function TermsConsentModal({ onAccept }: TermsConsentModalProps) {
   const canProceed = termsChecked && privacyChecked
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#303136] px-4">
-      <div className="w-full max-w-md rounded-3xl border border-violet-500 bg-[#3a3b40] p-6 shadow-2xl sm:p-8">
-
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: '#0f0f13' }}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl p-6 shadow-2xl sm:p-8"
+        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}
+      >
         <div className="mb-6 flex items-center gap-2">
           <BloodDropIcon size={24} />
           <span className="text-sm tracking-[0.22em] text-white/90">GasoVet</span>
         </div>
 
         <h1 className="mb-2 text-xl font-bold text-white">Antes de continuar</h1>
-        <p className="mb-6 text-sm leading-relaxed text-slate-300">
+        <p className="mb-6 text-sm leading-relaxed text-white/60">
           Para usar o GasoVet, você precisa confirmar que leu e concordou com nossos documentos legais.
         </p>
 
@@ -41,7 +46,7 @@ export function TermsConsentModal({ onAccept }: TermsConsentModalProps) {
               type="checkbox"
               onChange={(e) => setTermsChecked(e.target.checked)}
             />
-            <span className="text-sm text-slate-200">
+            <span className="text-sm text-white/80">
               Li e aceito os{' '}
               <a
                 className="font-medium text-violet-400 underline hover:text-violet-300"
@@ -61,7 +66,7 @@ export function TermsConsentModal({ onAccept }: TermsConsentModalProps) {
               type="checkbox"
               onChange={(e) => setPrivacyChecked(e.target.checked)}
             />
-            <span className="text-sm text-slate-200">
+            <span className="text-sm text-white/80">
               Li e aceito a{' '}
               <a
                 className="font-medium text-violet-400 underline hover:text-violet-300"
@@ -75,15 +80,26 @@ export function TermsConsentModal({ onAccept }: TermsConsentModalProps) {
           </label>
         </div>
 
-        <Button
-          className="mt-8 w-full"
-          disabled={!canProceed || isSaving}
-          type="button"
-          variant="primary"
-          onClick={() => void handleAccept()}
-        >
-          {isSaving ? 'Salvando...' : 'Confirmar e continuar'}
-        </Button>
+        <div className="mt-8 flex flex-col gap-3">
+          <button
+            className="w-full rounded-2xl py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+            disabled={!canProceed || isSaving}
+            type="button"
+            style={{ background: 'rgba(167,139,250,0.30)', border: '1px solid rgba(167,139,250,0.50)' }}
+            onClick={() => void handleAccept()}
+          >
+            {isSaving ? 'Salvando...' : 'Confirmar e continuar'}
+          </button>
+
+          <button
+            className="w-full rounded-2xl py-3 text-sm font-semibold text-white/50 transition hover:text-white/80 active:scale-[0.98]"
+            type="button"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)' }}
+            onClick={() => void onSignOut()}
+          >
+            Sair
+          </button>
+        </div>
       </div>
     </div>
   )

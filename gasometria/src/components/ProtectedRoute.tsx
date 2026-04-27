@@ -12,7 +12,7 @@ type ProtectedRouteProps = {
 type TermsStatus = 'loading' | 'accepted' | 'pending'
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, signOut } = useAuth()
   const location = useLocation()
   const [termsStatus, setTermsStatus] = useState<TermsStatus>('loading')
 
@@ -59,7 +59,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (termsStatus === 'pending') {
-    return <TermsConsentModal onAccept={handleAcceptTerms} />
+    return <TermsConsentModal onAccept={handleAcceptTerms} onSignOut={signOut} />
   }
 
   return <>{children}</>
