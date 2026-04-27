@@ -1717,11 +1717,7 @@ export function AnimalDetailsPage() {
       >
         <DialogContent
           className="max-h-[90vh] max-w-4xl overflow-y-auto"
-          style={speciesTheme?.image ? {
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 25%',
-          } : undefined}
+          style={{ background: '#0f0f13' }}
         >
           <DialogHeader>
             <DialogTitle>{editingContext ? 'Editar exame' : 'Revise e edite antes de confirmar'}</DialogTitle>
