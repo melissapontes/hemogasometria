@@ -1161,9 +1161,9 @@ export function AnimalDetailsPage() {
           >
             <p className="text-lg font-bold leading-tight text-white">{animal.nome}</p>
             <div className="mt-1 space-y-0.5">
-              <p className="text-sm text-white/70">Espécie: {getAnimalTypeName(animal.animal_types)}</p>
-              <p className="text-sm text-white/70">Sexo: {(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Não informado'}</p>
-              <p className="text-sm text-white/70">Idade: {animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Não informada'}</p>
+              <p className="text-sm text-white/70">{getAnimalTypeName(animal.animal_types)}</p>
+              <p className="text-sm text-white/70">{(animal.sexo === 'Femea' ? 'Fêmea' : animal.sexo) || 'Sexo não informado'}</p>
+              <p className="text-sm text-white/70">{animal.idade_anos ? `${animal.idade_anos} ano(s)` : 'Idade não informada'}</p>
             </div>
           </article>
         )}
