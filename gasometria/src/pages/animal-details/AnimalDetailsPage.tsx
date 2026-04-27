@@ -446,6 +446,8 @@ export function AnimalDetailsPage() {
   const [reviewBloodType, setReviewBloodType] = useState<BloodType | ''>('')
   const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
   const [deletingExam, setDeletingExam] = useState<'latest' | number | null>(null)
+  const [isDeletingExam, setIsDeletingExam] = useState(false)
+  const [deleteExamError, setDeleteExamError] = useState<string | null>(null)
   const [examHistory, setExamHistory] = useState<ExamHistoryRecord[]>([])
   const [selectedHistoryExam, setSelectedHistoryExam] = useState<ExamHistoryRecord | null>(null)
   const [pendingDocumentPath, setPendingDocumentPath] = useState<string | null>(null)
@@ -1077,33 +1079,33 @@ export function AnimalDetailsPage() {
   }
 
   async function handleDeleteLatestExam() {
-    if (!animalId) return
-    await supabase.from('animal_latest_exams').delete().eq('animal_id', animalId)
-
-    const next = examHistory[0] ?? null
-    if (next) {
-      await saveLatestExam(
-        next.extractedValues,
-        next.extractedReferences,
-        next.sourceFileName,
-        next.examDate,
-        next.bloodType,
-        next.documentPath,
-        false,
-      )
-      setExtractedValues(next.extractedValues)
-      setExtractedReferences(next.extractedReferences)
-    } else {
-      setLatestExam(null)
-      setExtractedValues(null)
-      setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
-    }
+    if (!animalId || !user) return
+    const { data, error } = await supabase
+      .from('animal_latest_exams')
+      .delete()
+      .eq('animal_id', animalId)
+      .eq('user_id', user.id)
+      .select()
+    if (error) throw new Error(error.message)
+    if (!data || data.length === 0) throw new Error('Sem permissão para apagar ou exame não encontrado.')
+    setLatestExam(null)
+    setExtractedValues(null)
+    setExtractedReferences(EMPTY_EXTRACTED_REFERENCES)
+    await loadExamHistory(false)
   }
 
   async function handleDeleteHistoryExam(id: number) {
-    await supabase.from('animal_exam_history').delete().eq('id', id)
-    setExamHistory((prev) => prev.filter((e) => e.id !== id))
+    if (!user) return
+    const { data, error } = await supabase
+      .from('animal_exam_history')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+    if (error) throw new Error(error.message)
+    if (!data || data.length === 0) throw new Error('Sem permissão para apagar ou exame não encontrado.')
     setSelectedHistoryExam(null)
+    await loadExamsInOrder()
   }
 
   async function openDocument(path: string) {
@@ -1792,27 +1794,37 @@ export function AnimalDetailsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={deletingExam !== null} onOpenChange={(open) => { if (!open) setDeletingExam(null) }}>
+      <Dialog open={deletingExam !== null} onOpenChange={(open) => { if (!open && !isDeletingExam) { setDeletingExam(null); setDeleteExamError(null) } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Apagar exame</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-white/70">Esta ação não pode ser desfeita. Deseja continuar?</p>
+          {deleteExamError && <p className="rounded-xl bg-red-900/40 px-3 py-2 text-sm text-red-300">{deleteExamError}</p>}
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setDeletingExam(null)}>
+            <Button type="button" variant="secondary" disabled={isDeletingExam} onClick={() => { setDeletingExam(null); setDeleteExamError(null) }}>
               Cancelar
             </Button>
             <button
               type="button"
-              className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              disabled={isDeletingExam}
+              className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50"
               style={{ background: 'rgba(239,68,68,0.3)', border: '1px solid rgba(239,68,68,0.5)' }}
-              onClick={() => {
-                if (deletingExam === 'latest') void handleDeleteLatestExam()
-                else if (typeof deletingExam === 'number') void handleDeleteHistoryExam(deletingExam)
-                setDeletingExam(null)
+              onClick={async () => {
+                setIsDeletingExam(true)
+                setDeleteExamError(null)
+                try {
+                  if (deletingExam === 'latest') await handleDeleteLatestExam()
+                  else if (typeof deletingExam === 'number') await handleDeleteHistoryExam(deletingExam)
+                  setDeletingExam(null)
+                } catch {
+                  setDeleteExamError('Erro ao apagar. Tente novamente.')
+                } finally {
+                  setIsDeletingExam(false)
+                }
               }}
             >
-              Apagar
+              {isDeletingExam ? 'Apagando...' : 'Apagar'}
             </button>
           </DialogFooter>
         </DialogContent>
