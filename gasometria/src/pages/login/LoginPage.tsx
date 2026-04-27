@@ -90,7 +90,15 @@ export function LoginPage() {
   const maxDateStr = maxBirthDate.toISOString().split('T')[0]
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center bg-[#303136] px-3 py-6 sm:px-6">
+    <main
+      className="flex min-h-dvh flex-col items-center justify-center px-3 py-6 sm:px-6"
+      style={{
+        backgroundImage: "url('/bglogin.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 45%',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <Card className="w-full max-w-md border-cyan-100 bg-white/95 shadow-[0_18px_60px_-26px_rgba(2,44,68,0.45)]">
         <CardHeader className="space-y-1 px-6 pb-0">
           <div className="flex flex-col items-center text-center">
@@ -132,9 +140,14 @@ export function LoginPage() {
 
               {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
 
-              <Button disabled={isSubmitting} type="submit" variant="primary">
+              <button
+                disabled={isSubmitting}
+                type="submit"
+                className="w-full rounded-2xl py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.25)' }}
+              >
                 {isSubmitting ? 'Entrando...' : 'Entrar'}
-              </Button>
+              </button>
             </form>
           ) : (
             <form className="grid gap-4" onSubmit={handleCadastro}>
