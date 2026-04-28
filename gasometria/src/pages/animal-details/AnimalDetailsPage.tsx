@@ -444,7 +444,6 @@ export function AnimalDetailsPage() {
   const [isSavingReviewedExam, setIsSavingReviewedExam] = useState(false)
   const [reviewExamDate, setReviewExamDate] = useState<string>('')
   const [reviewBloodType, setReviewBloodType] = useState<BloodType | ''>('')
-  const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
   const [deletingExam, setDeletingExam] = useState<'latest' | number | null>(null)
   const [isDeletingExam, setIsDeletingExam] = useState(false)
   const [deleteExamError, setDeleteExamError] = useState<string | null>(null)
@@ -963,7 +962,7 @@ export function AnimalDetailsPage() {
       if (typeof data?.exam_date === 'string' && data.exam_date.trim()) {
         setReviewExamDate(data.exam_date.trim())
       }
-      setIsExtractDialogOpen(false)
+      setSelectedFile(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao enviar documento para a IA.'
       const normalizedMessage = message.toLowerCase()
@@ -1512,18 +1511,44 @@ export function AnimalDetailsPage() {
             </p>
           )}
 
-          <button
-            className="w-full rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
-            type="button"
-            style={accentBtnStyle}
-            onClick={() => {
-              setSelectedFile(null)
-              setFileError(null)
-              setIsExtractDialogOpen(true)
-            }}
-          >
-            Extrair novo documento
-          </button>
+          <form onSubmit={handleSendToAi} className="space-y-3">
+            <label
+              htmlFor="animal-document-inline"
+              className="flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
+              style={accentBtnStyle}
+            >
+              <span>📎</span>
+              <span>{selectedFile ? selectedFile.name : 'Extrair novo documento'}</span>
+            </label>
+            <input
+              accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+              id="animal-document-inline"
+              type="file"
+              className="sr-only"
+              onChange={handleFileChange}
+            />
+
+            {fileError && (
+              <p className="rounded-xl bg-red-900/40 px-3 py-2 text-sm text-red-300">{fileError}</p>
+            )}
+
+            {selectedFile && !isSendingToAi && (
+              <button
+                type="submit"
+                className="w-full rounded-2xl py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
+                style={accentBtnStyle}
+              >
+                Enviar para análise
+              </button>
+            )}
+
+            {isSendingToAi && (
+              <div className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white/80" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/80 shrink-0" />
+                Analisando... Aguarde, pode levar alguns segundos.
+              </div>
+            )}
+          </form>
         </section>
       ) : null}
 
@@ -1643,78 +1668,6 @@ export function AnimalDetailsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isExtractDialogOpen} onOpenChange={(open) => { if (!isSendingToAi) setIsExtractDialogOpen(open) }}>
-        <DialogContent
-          className="max-h-[90vh] max-w-2xl overflow-y-auto"
-          style={speciesTheme?.image ? {
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 25%',
-          } : undefined}
-        >
-          <DialogHeader>
-            <DialogTitle>Extrair novo documento</DialogTitle>
-            <DialogDescription>Envie foto ou PDF para extrair os parâmetros.</DialogDescription>
-          </DialogHeader>
-
-          <form className="space-y-4" onSubmit={handleSendToAi}>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80" htmlFor="animal-document">
-                Documento (PDF ou imagem)
-              </label>
-              <label
-                htmlFor="animal-document"
-                className="flex cursor-pointer items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white/80 transition"
-                style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${accent}50` }}
-              >
-                <span className="rounded-lg px-3 py-1 text-xs font-medium text-white" style={{ background: `${accent}40`, border: `1px solid ${accent}60` }}>
-                  Escolher arquivo
-                </span>
-                <span className="truncate text-white/60">
-                  {selectedFile ? selectedFile.name : 'Nenhum arquivo selecionado'}
-                </span>
-              </label>
-              <input
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                id="animal-document"
-                type="file"
-                className="sr-only"
-                onChange={handleFileChange}
-              />
-              <p className="text-xs text-white/40">Tamanho máximo: 10MB.</p>
-            </div>
-
-            {fileError ? <p className="rounded-xl bg-red-900/40 px-3 py-2 text-sm font-medium text-red-300">{fileError}</p> : null}
-
-            {isSendingToAi && (
-              <div className="flex items-center gap-3 rounded-xl bg-white/5 px-4 py-3 text-sm text-white/70">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/80 shrink-0" />
-                Analisando documento com IA... Aguarde, pode levar alguns segundos.
-              </div>
-            )}
-
-            <DialogFooter>
-              <button
-                type="button"
-                className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white/70 transition"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
-                disabled={isSendingToAi}
-                onClick={() => setIsExtractDialogOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSendingToAi}
-                className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
-                style={accentBtnStyle}
-              >
-                {isSendingToAi ? 'Processando...' : 'Enviar'}
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
 
       <Dialog
