@@ -857,6 +857,7 @@ export function AnimalDetailsPage() {
 
     setSelectedFile(file)
     setFileError(null)
+    setIsExtractDialogOpen(true)
   }
 
   async function convertFileToBase64(file: File): Promise<string> {
