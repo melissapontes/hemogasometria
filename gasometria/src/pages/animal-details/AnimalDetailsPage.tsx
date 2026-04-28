@@ -1547,20 +1547,14 @@ export function AnimalDetailsPage() {
 
           <form onSubmit={handleSendToAi} className="space-y-3">
             <input
-              ref={nativeFileInputRef}
               accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
               type="file"
               onChange={handleFileChange}
-              style={{ position: 'fixed', top: 0, left: 0, width: '1px', height: '1px', opacity: 0.01 }}
-            />
-            <button
-              type="button"
-              className="w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold text-white transition active:scale-[0.98]"
+              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white
+                file:mr-3 file:rounded-xl file:border-0 file:bg-white/20 file:px-4 file:py-2
+                file:text-sm file:font-semibold file:text-white file:cursor-pointer"
               style={accentBtnStyle}
-              onClick={() => nativeFileInputRef.current?.click()}
-            >
-              📎 {selectedFile ? selectedFile.name : 'Extrair novo documento'}
-            </button>
+            />
 
             {fileError && (
               <p className="rounded-xl bg-red-900/40 px-3 py-2 text-sm text-red-300">{fileError}</p>
