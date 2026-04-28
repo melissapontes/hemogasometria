@@ -1514,15 +1514,15 @@ export function AnimalDetailsPage() {
 
           <form onSubmit={handleSendToAi} className="space-y-3">
             <label
-              className="block w-full cursor-pointer rounded-2xl px-4 py-3 text-sm font-semibold text-white"
+              className="relative block w-full cursor-pointer overflow-hidden rounded-2xl px-4 py-3 text-sm font-semibold text-white"
               style={accentBtnStyle}
             >
               📎 {selectedFile ? selectedFile.name : 'Extrair novo documento'}
               <input
                 accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
                 type="file"
-                style={{ width: 0, height: 0, opacity: 0, position: 'absolute' }}
                 onChange={handleFileChange}
+                style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
               />
             </label>
 
