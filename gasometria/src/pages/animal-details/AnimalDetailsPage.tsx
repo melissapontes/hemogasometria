@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -422,6 +422,7 @@ export function AnimalDetailsPage() {
   const { state } = useLocation()
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const nativeFileInputRef = useRef<HTMLInputElement>(null)
 
   const [animal, setAnimal] = useState<Animal | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -824,6 +825,38 @@ export function AnimalDetailsPage() {
       await supabase.from('animal_exam_history').insert(historyPayload)
       void loadExamHistory()
     }
+  }
+
+  useEffect(() => {
+    const input = nativeFileInputRef.current
+    if (!input) return
+    const listener = () => {
+      const file = input.files?.[0] ?? null
+      handleNativeFileChange(file)
+    }
+    input.addEventListener('change', listener)
+    return () => input.removeEventListener('change', listener)
+  }, [nativeFileInputRef.current])
+
+  function handleNativeFileChange(file: File | null) {
+    setPendingReviewValues(null)
+    setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
+    setPendingSourceFileName(null)
+    setReviewError(null)
+    setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
+    if (!file) { setSelectedFile(null); setFileError(null); return }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setSelectedFile(null)
+      setFileError(`Arquivo muito grande. Máximo: ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`)
+      return
+    }
+    if (!SUPPORTED_MIME_TYPES.has(file.type) && file.type !== '') {
+      setSelectedFile(null)
+      setFileError('Formato não suportado. Use PDF, JPG, PNG ou WebP.')
+      return
+    }
+    setFileError(null)
+    setSelectedFile(file)
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -1513,18 +1546,21 @@ export function AnimalDetailsPage() {
           )}
 
           <form onSubmit={handleSendToAi} className="space-y-3">
-            <label
-              className="relative block w-full cursor-pointer overflow-hidden rounded-2xl px-4 py-3 text-sm font-semibold text-white"
+            <input
+              ref={nativeFileInputRef}
+              accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+              type="file"
+              onChange={handleFileChange}
+              style={{ position: 'fixed', top: 0, left: 0, width: '1px', height: '1px', opacity: 0.01 }}
+            />
+            <button
+              type="button"
+              className="w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold text-white transition active:scale-[0.98]"
               style={accentBtnStyle}
+              onClick={() => nativeFileInputRef.current?.click()}
             >
               📎 {selectedFile ? selectedFile.name : 'Extrair novo documento'}
-              <input
-                accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
-                type="file"
-                onChange={handleFileChange}
-                style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
-              />
-            </label>
+            </button>
 
             {fileError && (
               <p className="rounded-xl bg-red-900/40 px-3 py-2 text-sm text-red-300">{fileError}</p>
