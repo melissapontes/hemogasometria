@@ -12,7 +12,7 @@ type AnimalCardProps = {
   onDelete: (animalId: string) => void
 }
 
-export function AnimalCard({ accentColor, id, nome, especie, sexo, idadeAnos, onOpen, onEdit, onDelete }: AnimalCardProps) {
+export function AnimalCard({ accentColor, id, nome, sexo, idadeAnos, onOpen, onEdit, onDelete }: AnimalCardProps) {
   const accent = accentColor ?? '#06b6d4'
 
   return (
