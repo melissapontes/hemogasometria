@@ -1643,12 +1643,9 @@ export function AnimalDetailsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isExtractDialogOpen} onOpenChange={() => {}}>
+      <Dialog open={isExtractDialogOpen} onOpenChange={(open) => { if (!isSendingToAi) setIsExtractDialogOpen(open) }}>
         <DialogContent
           className="max-h-[90vh] max-w-2xl overflow-y-auto"
-          onInteractOutside={(e) => e.preventDefault()}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onFocusOutside={(e) => e.preventDefault()}
           style={speciesTheme?.image ? {
             backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
             backgroundSize: 'cover',
@@ -1708,7 +1705,7 @@ export function AnimalDetailsPage() {
               </button>
               <button
                 type="submit"
-                disabled={isSendingToAi || !selectedFile}
+                disabled={isSendingToAi}
                 className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
                 style={accentBtnStyle}
               >
