@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -422,6 +422,7 @@ export function AnimalDetailsPage() {
   const { state } = useLocation()
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [animal, setAnimal] = useState<Animal | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -1512,21 +1513,21 @@ export function AnimalDetailsPage() {
           )}
 
           <form onSubmit={handleSendToAi} className="space-y-3">
-            <div className="relative overflow-hidden rounded-2xl">
-              <div
-                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-white"
-                style={accentBtnStyle}
-              >
-                <span>📎</span>
-                <span className="truncate">{selectedFile ? selectedFile.name : 'Extrair novo documento'}</span>
-              </div>
-              <input
-                accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
-                type="file"
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                onChange={handleFileChange}
-              />
-            </div>
+            <input
+              ref={fileInputRef}
+              accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+              type="file"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+            <button
+              type="button"
+              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
+              style={accentBtnStyle}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              📎 {selectedFile ? selectedFile.name : 'Extrair novo documento'}
+            </button>
 
             {fileError && (
               <p className="rounded-xl bg-red-900/40 px-3 py-2 text-sm text-red-300">{fileError}</p>
