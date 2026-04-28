@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -422,7 +422,7 @@ export function AnimalDetailsPage() {
   const { state } = useLocation()
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
-  const nativeFileInputRef = useRef<HTMLInputElement>(null)
+
 
   const [animal, setAnimal] = useState<Animal | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -827,37 +827,6 @@ export function AnimalDetailsPage() {
     }
   }
 
-  useEffect(() => {
-    const input = nativeFileInputRef.current
-    if (!input) return
-    const listener = () => {
-      const file = input.files?.[0] ?? null
-      handleNativeFileChange(file)
-    }
-    input.addEventListener('change', listener)
-    return () => input.removeEventListener('change', listener)
-  }, [nativeFileInputRef.current])
-
-  function handleNativeFileChange(file: File | null) {
-    setPendingReviewValues(null)
-    setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
-    setPendingSourceFileName(null)
-    setReviewError(null)
-    setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
-    if (!file) { setSelectedFile(null); setFileError(null); return }
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setSelectedFile(null)
-      setFileError(`Arquivo muito grande. Máximo: ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.`)
-      return
-    }
-    if (!SUPPORTED_MIME_TYPES.has(file.type) && file.type !== '') {
-      setSelectedFile(null)
-      setFileError('Formato não suportado. Use PDF, JPG, PNG ou WebP.')
-      return
-    }
-    setFileError(null)
-    setSelectedFile(file)
-  }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
