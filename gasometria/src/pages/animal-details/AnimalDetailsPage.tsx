@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -1127,6 +1127,7 @@ export function AnimalDetailsPage() {
   const accent = speciesTheme?.accent ?? '#a78bfa'
   const chartColor = speciesTheme?.chartColor ?? accent
   const accentBtnStyle = { background: `${accent}55`, border: `1px solid ${accent}99` }
+  const persistentFileInputRef = useRef<HTMLInputElement>(null)
 
   return (
     <PageContainer
@@ -1139,6 +1140,15 @@ export function AnimalDetailsPage() {
       } : speciesTheme ? { background: speciesTheme.bg } : undefined}
       overlay={speciesTheme ? { background: 'linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.82) 100%)' } : undefined}
     >
+      {/* Input persistente FORA do dialog - sempre montado no DOM */}
+      <input
+        ref={persistentFileInputRef}
+        accept=".pdf,.jpg,.jpeg,.png,.webp"
+        type="file"
+        style={{ position: 'fixed', top: '-300%', left: 0, opacity: 0 }}
+        onChange={handleFileChange}
+      />
+
       <section className="mb-4 border-b border-white/20 pb-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -1666,25 +1676,19 @@ export function AnimalDetailsPage() {
               <label className="text-sm font-medium text-white/80" htmlFor="animal-document">
                 Documento (PDF ou imagem)
               </label>
-              <label
-                htmlFor="animal-document"
-                className="flex cursor-pointer items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white/80 transition"
+              <button
+                type="button"
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white/80 transition"
                 style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${accent}50` }}
+                onClick={() => persistentFileInputRef.current?.click()}
               >
-                <span className="rounded-lg px-3 py-1 text-xs font-medium text-white" style={{ background: `${accent}40`, border: `1px solid ${accent}60` }}>
+                <span className="rounded-lg px-3 py-1 text-xs font-medium text-white shrink-0" style={{ background: `${accent}40`, border: `1px solid ${accent}60` }}>
                   Escolher arquivo
                 </span>
                 <span className="truncate text-white/60">
                   {selectedFile ? selectedFile.name : 'Nenhum arquivo selecionado'}
                 </span>
-              </label>
-              <input
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                id="animal-document"
-                type="file"
-                className="sr-only"
-                onChange={handleFileChange}
-              />
+              </button>
               <p className="text-xs text-white/40">Tamanho máximo: 10MB.</p>
             </div>
 
