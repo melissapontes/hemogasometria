@@ -17,20 +17,13 @@ import {
   TextInput,
 } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
+import { validateFile } from '../../lib/file-validation'
 import { getSpeciesDefaultReferences, mergeWithDefaults } from '../../lib/species-references'
 import { getSpeciesTheme } from '../../lib/species-themes'
 import { clearStoredAuthSession, supabase } from '../../lib/supabase'
 import type { Animal } from '../../types/animals'
 import { ParameterRangeBar } from './components/ParameterRangeBar'
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
-const SUPPORTED_MIME_TYPES = new Set([
-  'application/pdf',
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-])
 
 type ExtractedExamValues = {
   ph: number | null
@@ -843,15 +836,10 @@ export function AnimalDetailsPage() {
       return
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
+    const validation = validateFile(file)
+    if (!validation.valid) {
       setSelectedFile(null)
-      setFileError('Arquivo muito grande. Envie no máximo 10MB.')
-      return
-    }
-
-    if (!SUPPORTED_MIME_TYPES.has(file.type.toLowerCase())) {
-      setSelectedFile(null)
-      setFileError('Formato inválido. Use PDF, JPG, PNG ou WEBP.')
+      setFileError(validation.error)
       return
     }
 
