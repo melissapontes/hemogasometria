@@ -1517,7 +1517,7 @@ export function AnimalDetailsPage() {
               ref={fileInputRef}
               accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
               type="file"
-              style={{ display: 'none' }}
+              style={{ position: 'fixed', top: '-200%', left: '-200%', opacity: 0, width: '1px', height: '1px' }}
               onChange={handleFileChange}
             />
             <button
