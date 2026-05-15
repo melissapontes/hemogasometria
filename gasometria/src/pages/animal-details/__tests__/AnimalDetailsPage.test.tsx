@@ -1,5 +1,4 @@
 import { render, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AnimalDetailsPage } from '../AnimalDetailsPage'
@@ -71,22 +70,8 @@ describe('AnimalDetailsPage — input de arquivo', () => {
     vi.clearAllMocks()
   })
 
-  it('input[type=file] aparece ao abrir o dialog de extração', async () => {
+  it('input[type=file] está sempre no DOM (fora do dialog)', async () => {
     renderPage()
-
-    // Aguarda carregamento e clica no botão "Extrair novo documento"
-    await waitFor(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(
-        (b) => b.textContent?.includes('Extrair novo documento'),
-      )
-      expect(btn).toBeDefined()
-    })
-
-    const btn = Array.from(document.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('Extrair novo documento'),
-    )!
-
-    await userEvent.click(btn)
 
     await waitFor(() => {
       const fileInput = document.querySelector('input[type="file"]')
@@ -98,45 +83,30 @@ describe('AnimalDetailsPage — input de arquivo', () => {
     renderPage()
 
     await waitFor(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(
-        (b) => b.textContent?.includes('Extrair novo documento'),
-      )
-      expect(btn).toBeDefined()
-    })
-
-    const btn = Array.from(document.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('Extrair novo documento'),
-    )!
-
-    await userEvent.click(btn)
-
-    await waitFor(() => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
       expect(input).not.toBeNull()
       expect(input!.accept).toBe('.pdf,.jpg,.jpeg,.png,.webp,image/*')
     })
   })
 
-  it('input[type=file] está oculto com sr-only (não interfere no layout)', async () => {
+  it('input[type=file] está oculto visualmente (não interfere no layout)', async () => {
     renderPage()
-
-    await waitFor(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(
-        (b) => b.textContent?.includes('Extrair novo documento'),
-      )
-      expect(btn).toBeDefined()
-    })
-
-    const btn = Array.from(document.querySelectorAll('button')).find(
-      (b) => b.textContent?.includes('Extrair novo documento'),
-    )!
-
-    await userEvent.click(btn)
 
     await waitFor(() => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
       expect(input).not.toBeNull()
-      expect(input!.className).toContain('sr-only')
+      expect(input!.style.position).toBe('absolute')
+      expect(input!.style.overflow).toBe('hidden')
+    })
+  })
+
+  it('input[type=file] não é focável via tab (tabIndex=-1)', async () => {
+    renderPage()
+
+    await waitFor(() => {
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
+      expect(input).not.toBeNull()
+      expect(input!.tabIndex).toBe(-1)
     })
   })
 })
