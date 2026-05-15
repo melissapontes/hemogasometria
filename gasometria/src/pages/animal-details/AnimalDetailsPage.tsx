@@ -17,7 +17,7 @@ import {
   TextInput,
 } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
-import { validateFile } from '../../lib/file-validation'
+import { resolveFileMimeType, validateFile } from '../../lib/file-validation'
 import { getSpeciesDefaultReferences, mergeWithDefaults } from '../../lib/species-references'
 import { getSpeciesTheme } from '../../lib/species-themes'
 import { clearStoredAuthSession, supabase } from '../../lib/supabase'
@@ -907,9 +907,10 @@ export function AnimalDetailsPage() {
 
       const ext = selectedFile.name.split('.').pop() ?? 'bin'
       const storagePath = `${user?.id}/${animalId}/${Date.now()}.${ext}`
+      const resolvedMime = resolveFileMimeType(selectedFile)
       const { error: uploadError } = await supabase.storage
         .from('exam-documents')
-        .upload(storagePath, selectedFile, { contentType: selectedFile.type })
+        .upload(storagePath, selectedFile, { contentType: resolvedMime })
       const uploadedPath = uploadError ? null : storagePath
 
       const { data, error } = await supabase.functions.invoke('interpret-animal-document', {
@@ -919,7 +920,7 @@ export function AnimalDetailsPage() {
         body: {
           animalId: animal.id,
           fileName: selectedFile.name,
-          mimeType: selectedFile.type,
+          mimeType: resolvedMime,
           fileBase64,
         },
       })
@@ -1115,7 +1116,7 @@ export function AnimalDetailsPage() {
   const accent = speciesTheme?.accent ?? '#a78bfa'
   const chartColor = speciesTheme?.chartColor ?? accent
   const accentBtnStyle = { background: `${accent}55`, border: `1px solid ${accent}99` }
-  const persistentFileInputRef = useRef<HTMLInputElement>(null)
+  const dialogFileInputRef = useRef<HTMLInputElement>(null)
 
   return (
     <PageContainer
@@ -1128,14 +1129,7 @@ export function AnimalDetailsPage() {
       } : speciesTheme ? { background: speciesTheme.bg } : undefined}
       overlay={speciesTheme ? { background: 'linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.82) 100%)' } : undefined}
     >
-      {/* Input persistente FORA do dialog - sempre montado no DOM */}
-      <input
-        ref={persistentFileInputRef}
-        accept=".pdf,.jpg,.jpeg,.png,.webp"
-        type="file"
-        style={{ position: 'fixed', top: '-300%', left: 0, opacity: 0 }}
-        onChange={handleFileChange}
-      />
+
 
       <section className="mb-4 border-b border-white/20 pb-4">
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -1645,7 +1639,12 @@ export function AnimalDetailsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
+      <Dialog open={isExtractDialogOpen} onOpenChange={(open) => {
+          setIsExtractDialogOpen(open)
+          if (open && dialogFileInputRef.current) {
+            dialogFileInputRef.current.value = ''
+          }
+        }}>
         <DialogContent
           className="max-h-[90vh] max-w-2xl overflow-y-auto"
           style={speciesTheme?.image ? {
@@ -1661,22 +1660,30 @@ export function AnimalDetailsPage() {
 
           <form className="space-y-4" onSubmit={handleSendToAi}>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-white/80" htmlFor="animal-document">
+              <p className="text-sm font-medium text-white/80">
                 Documento (PDF ou imagem)
-              </label>
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white/80 transition"
+              </p>
+              {/* Label wrapping a real file input — works on all mobile browsers
+                  without needing programmatic .click() which is blocked by
+                  Radix focus-trap on iOS/Android */}
+              <label
+                className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white/80 transition active:scale-[0.98]"
                 style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${accent}50` }}
-                onClick={() => persistentFileInputRef.current?.click()}
               >
+                <input
+                  ref={dialogFileInputRef}
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+                  type="file"
+                  className="sr-only"
+                  onChange={handleFileChange}
+                />
                 <span className="rounded-lg px-3 py-1 text-xs font-medium text-white shrink-0" style={{ background: `${accent}40`, border: `1px solid ${accent}60` }}>
                   Escolher arquivo
                 </span>
                 <span className="truncate text-white/60">
                   {selectedFile ? selectedFile.name : 'Nenhum arquivo selecionado'}
                 </span>
-              </button>
+              </label>
               <p className="text-xs text-white/40">Tamanho máximo: 10MB.</p>
             </div>
 

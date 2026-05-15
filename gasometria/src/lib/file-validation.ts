@@ -8,6 +8,32 @@ export const SUPPORTED_MIME_TYPES = new Set([
   'image/webp',
 ])
 
+const EXTENSION_TO_MIME: Record<string, string> = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+}
+
+/**
+ * Resolve the effective MIME type for a File.
+ *
+ * On many mobile browsers (especially Android) the `file.type` property can be
+ * an empty string when the user captures a photo with the camera or picks from
+ * the gallery.  In that case we fall back to the file extension so the upload
+ * is not incorrectly rejected.
+ */
+export function resolveFileMimeType(file: File): string {
+  const reported = file.type?.toLowerCase().trim()
+  if (reported) {
+    return reported
+  }
+
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  return EXTENSION_TO_MIME[ext] ?? ''
+}
+
 export type FileValidationResult =
   | { valid: true }
   | { valid: false; error: string }
@@ -17,7 +43,8 @@ export function validateFile(file: File): FileValidationResult {
     return { valid: false, error: 'Arquivo muito grande. Envie no máximo 10MB.' }
   }
 
-  if (!SUPPORTED_MIME_TYPES.has(file.type.toLowerCase())) {
+  const mime = resolveFileMimeType(file)
+  if (!SUPPORTED_MIME_TYPES.has(mime)) {
     return { valid: false, error: 'Formato inválido. Use PDF, JPG, PNG ou WEBP.' }
   }
 
