@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AnimalDetailsPage } from '../AnimalDetailsPage'
@@ -70,44 +71,72 @@ describe('AnimalDetailsPage — input de arquivo', () => {
     vi.clearAllMocks()
   })
 
-  it('input[type=file] está no DOM quando a página carrega (dialog fechado)', async () => {
+  it('input[type=file] aparece ao abrir o dialog de extração', async () => {
     renderPage()
 
-    // Aguarda o carregamento inicial
+    // Aguarda carregamento e clica no botão "Extrair novo documento"
     await waitFor(() => {
-      expect(document.querySelector('input[type="file"]')).not.toBeNull()
+      const btn = Array.from(document.querySelectorAll('button')).find(
+        (b) => b.textContent?.includes('Extrair novo documento'),
+      )
+      expect(btn).toBeDefined()
+    })
+
+    const btn = Array.from(document.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('Extrair novo documento'),
+    )!
+
+    await userEvent.click(btn)
+
+    await waitFor(() => {
+      const fileInput = document.querySelector('input[type="file"]')
+      expect(fileInput).not.toBeNull()
     })
   })
 
-  it('input[type=file] fica no DOM mesmo sem interação com o dialog', async () => {
+  it('input[type=file] aceita os formatos corretos incluindo image/*', async () => {
     renderPage()
 
     await waitFor(() => {
-      const fileInputs = document.querySelectorAll('input[type="file"]')
-      // Deve haver exatamente 1 input de arquivo — o persistente fora do dialog
-      expect(fileInputs).toHaveLength(1)
+      const btn = Array.from(document.querySelectorAll('button')).find(
+        (b) => b.textContent?.includes('Extrair novo documento'),
+      )
+      expect(btn).toBeDefined()
     })
-  })
 
-  it('input[type=file] está oculto visualmente (não interfere no layout)', async () => {
-    renderPage()
+    const btn = Array.from(document.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('Extrair novo documento'),
+    )!
+
+    await userEvent.click(btn)
 
     await waitFor(() => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
       expect(input).not.toBeNull()
-      // Deve estar escondido por position: fixed fora da tela
-      expect(input!.style.position).toBe('fixed')
-      expect(input!.style.opacity).toBe('0')
+      expect(input!.accept).toBe('.pdf,.jpg,.jpeg,.png,.webp,image/*')
     })
   })
 
-  it('input[type=file] aceita apenas os formatos corretos', async () => {
+  it('input[type=file] está oculto com sr-only (não interfere no layout)', async () => {
     renderPage()
+
+    await waitFor(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find(
+        (b) => b.textContent?.includes('Extrair novo documento'),
+      )
+      expect(btn).toBeDefined()
+    })
+
+    const btn = Array.from(document.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('Extrair novo documento'),
+    )!
+
+    await userEvent.click(btn)
 
     await waitFor(() => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
       expect(input).not.toBeNull()
-      expect(input!.accept).toBe('.pdf,.jpg,.jpeg,.png,.webp')
+      expect(input!.className).toContain('sr-only')
     })
   })
 })
