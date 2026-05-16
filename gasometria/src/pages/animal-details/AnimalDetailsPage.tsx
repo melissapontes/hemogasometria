@@ -589,6 +589,16 @@ export function AnimalDetailsPage() {
     void loadExamsInOrder()
   }, [animalId, user?.id])
 
+  useEffect(() => {
+    logStep('state:selectedFile', { value: selectedFile?.name ?? null })
+  }, [selectedFile])
+
+  useEffect(() => {
+    logStep('component:mounted', { animalId })
+    return () => { logStep('component:unmounted', { animalId }) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function loadExamsInOrder() {
     await loadLatestExam()
     // Se após carregar não houver latest, promove o mais recente do histórico
