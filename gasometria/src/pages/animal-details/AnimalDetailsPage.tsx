@@ -824,14 +824,6 @@ export function AnimalDetailsPage() {
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
-
-    // DEBUG TEMPORÁRIO — remover após confirmar que funciona no celular
-    if (!file) {
-      window.alert('[DEBUG] handleFileChange disparou, mas file é null.')
-    } else {
-      window.alert(`[DEBUG] Arquivo: ${file.name} | Tipo: ${file.type || '(vazio)'} | Tamanho: ${file.size}`)
-    }
-
     setPendingReviewValues(null)
     setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
     setPendingSourceFileName(null)
@@ -846,7 +838,6 @@ export function AnimalDetailsPage() {
 
     const validation = validateFile(file)
     if (!validation.valid) {
-      window.alert(`[DEBUG] Validação falhou: ${validation.error}`)
       setSelectedFile(null)
       setFileError(validation.error)
       setIsExtractDialogOpen(true)

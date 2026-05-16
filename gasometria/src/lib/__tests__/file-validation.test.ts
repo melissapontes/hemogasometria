@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_FILE_SIZE_BYTES, validateFile } from '../file-validation'
+import { MAX_FILE_SIZE_BYTES, resolveFileMimeType, validateFile } from '../file-validation'
 
 function makeFile(name: string, type: string, sizeBytes: number): File {
   const content = new Uint8Array(sizeBytes)
@@ -57,7 +57,6 @@ describe('validateFile', () => {
     })
 
     it('tamanho é verificado antes do tipo', () => {
-      // Um arquivo inválido em tipo E tamanho deve retornar erro de tamanho
       const file = makeFile('video.mp4', 'video/mp4', MAX_FILE_SIZE_BYTES + 1)
       const result = validateFile(file)
       expect(result.valid).toBe(false)
@@ -65,5 +64,59 @@ describe('validateFile', () => {
         expect(result.error).toMatch(/muito grande/)
       }
     })
+  })
+
+  describe('Android: file.type vazio (câmera / galeria)', () => {
+    it('aceita .pdf com type vazio (fallback por extensão)', () => {
+      const file = makeFile('laudo.pdf', '', 1024)
+      expect(validateFile(file)).toEqual({ valid: true })
+    })
+
+    it('aceita .jpg com type vazio', () => {
+      const file = makeFile('foto.jpg', '', 1024)
+      expect(validateFile(file)).toEqual({ valid: true })
+    })
+
+    it('aceita .jpeg com type vazio', () => {
+      const file = makeFile('foto.jpeg', '', 1024)
+      expect(validateFile(file)).toEqual({ valid: true })
+    })
+
+    it('aceita .png com type vazio', () => {
+      const file = makeFile('imagem.png', '', 1024)
+      expect(validateFile(file)).toEqual({ valid: true })
+    })
+
+    it('aceita .webp com type vazio', () => {
+      const file = makeFile('imagem.webp', '', 1024)
+      expect(validateFile(file)).toEqual({ valid: true })
+    })
+
+    it('rejeita .gif com type vazio (extensão não suportada)', () => {
+      const file = makeFile('imagem.gif', '', 1024)
+      expect(validateFile(file).valid).toBe(false)
+    })
+
+    it('rejeita arquivo sem extensão e type vazio', () => {
+      const file = makeFile('arquivo', '', 1024)
+      expect(validateFile(file).valid).toBe(false)
+    })
+  })
+})
+
+describe('resolveFileMimeType', () => {
+  it('retorna o type informado quando não está vazio', () => {
+    const file = makeFile('foto.jpg', 'image/jpeg', 100)
+    expect(resolveFileMimeType(file)).toBe('image/jpeg')
+  })
+
+  it('resolve pela extensão quando type está vazio', () => {
+    const file = makeFile('laudo.pdf', '', 100)
+    expect(resolveFileMimeType(file)).toBe('application/pdf')
+  })
+
+  it('retorna string vazia para extensão desconhecida com type vazio', () => {
+    const file = makeFile('arquivo.xyz', '', 100)
+    expect(resolveFileMimeType(file)).toBe('')
   })
 })
