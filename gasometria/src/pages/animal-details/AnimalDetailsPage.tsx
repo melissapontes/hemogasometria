@@ -440,7 +440,6 @@ export function AnimalDetailsPage() {
   const [isSavingReviewedExam, setIsSavingReviewedExam] = useState(false)
   const [reviewExamDate, setReviewExamDate] = useState<string>('')
   const [reviewBloodType, setReviewBloodType] = useState<BloodType | ''>('')
-  const [isExtractDialogOpen, setIsExtractDialogOpen] = useState(false)
   const [deletingExam, setDeletingExam] = useState<'latest' | number | null>(null)
   const [isDeletingExam, setIsDeletingExam] = useState(false)
   const [deleteExamError, setDeleteExamError] = useState<string | null>(null)
@@ -855,14 +854,12 @@ export function AnimalDetailsPage() {
     if (!validation.valid) {
       setSelectedFile(null)
       setFileError(validation.error)
-      setIsExtractDialogOpen(true)
       return
     }
 
-    logStep('handleFileChange:opening_dialog')
+    logStep('handleFileChange:file_ready')
     setSelectedFile(file)
     setFileError(null)
-    setIsExtractDialogOpen(true)
   }
 
   async function convertFileToBase64(file: File): Promise<string> {
@@ -973,7 +970,7 @@ export function AnimalDetailsPage() {
       if (typeof data?.exam_date === 'string' && data.exam_date.trim()) {
         setReviewExamDate(data.exam_date.trim())
       }
-      setIsExtractDialogOpen(false)
+      setSelectedFile(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao enviar documento para a IA.'
       const normalizedMessage = message.toLowerCase()
@@ -1525,24 +1522,50 @@ export function AnimalDetailsPage() {
             </p>
           )}
 
-          <label
-            className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
-            style={accentBtnStyle}
-            onClick={() => logStep('label:clicked')}
-          >
-            Extrair novo documento
-            <input
-              accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
-              className="sr-only"
-              type="file"
-              onChange={handleFileChange}
-            />
-          </label>
-
-          {/* Feedback de erro visível fora do dialog */}
-          {fileError && !isExtractDialogOpen ? (
-            <p className="mt-2 rounded-xl bg-red-900/30 px-4 py-2 text-sm text-red-300">{fileError}</p>
-          ) : null}
+          {selectedFile ? (
+            <form className="space-y-3 rounded-2xl p-4" style={{ background: 'rgba(0,0,0,0.35)', border: `1px solid ${accent}40` }} onSubmit={handleSendToAi}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Documento selecionado</p>
+              <p className="truncate text-sm font-medium text-white">{selectedFile.name}</p>
+              {fileError ? <p className="text-sm text-red-400">{fileError}</p> : null}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-white/60 transition"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                  onClick={() => { setSelectedFile(null); setFileError(null) }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingToAi}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
+                  style={accentBtnStyle}
+                >
+                  {isSendingToAi ? 'Enviando...' : 'Enviar para análise'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <label
+                className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
+                style={accentBtnStyle}
+                onClick={() => logStep('label:clicked')}
+              >
+                Extrair novo documento
+                <input
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+                  className="sr-only"
+                  type="file"
+                  onChange={handleFileChange}
+                />
+              </label>
+              {fileError ? (
+                <p className="mt-2 rounded-xl bg-red-900/30 px-4 py-2 text-sm text-red-300">{fileError}</p>
+              ) : null}
+            </>
+          )}
         </section>
       ) : null}
 
@@ -1662,62 +1685,6 @@ export function AnimalDetailsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isExtractDialogOpen} onOpenChange={setIsExtractDialogOpen}>
-        <DialogContent
-          className="max-h-[90vh] max-w-2xl overflow-y-auto"
-          style={speciesTheme?.image ? {
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)), url('${speciesTheme.image}')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 25%',
-          } : undefined}
-        >
-          <DialogHeader>
-            <DialogTitle>Extrair novo documento</DialogTitle>
-            <DialogDescription>Envie foto ou PDF para extrair os parâmetros.</DialogDescription>
-          </DialogHeader>
-
-          <form className="space-y-4" onSubmit={handleSendToAi}>
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-white/80">
-                Documento selecionado
-              </p>
-              <div
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white/80"
-                style={{ background: 'rgba(255,255,255,0.08)', border: `1px solid ${accent}50` }}
-              >
-                <span className="rounded-lg px-3 py-1 text-xs font-medium text-white shrink-0" style={{ background: `${accent}40`, border: `1px solid ${accent}60` }}>
-                  Arquivo
-                </span>
-                <span className="truncate text-white/60">
-                  {selectedFile ? selectedFile.name : 'Nenhum arquivo selecionado'}
-                </span>
-              </div>
-              <p className="text-xs text-white/40">Tamanho máximo: 10MB.</p>
-            </div>
-
-            {fileError ? <p className="text-sm text-red-400">{fileError}</p> : null}
-
-            <DialogFooter>
-              <button
-                type="button"
-                className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white/70 transition"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
-                onClick={() => setIsExtractDialogOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSendingToAi}
-                className="rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
-                style={accentBtnStyle}
-              >
-                {isSendingToAi ? 'Enviando...' : 'Enviar'}
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={Boolean(pendingReviewValues)}
