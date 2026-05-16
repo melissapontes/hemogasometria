@@ -7,11 +7,6 @@ import { AuthProvider } from './auth/AuthProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { reportError } from './lib/error-reporter'
 
-// DevTools mobile — ativar via ?debug=true na URL
-if (new URLSearchParams(window.location.search).has('debug')) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  void (import('eruda') as Promise<any>).then((m) => m.default.init())
-}
 
 window.addEventListener('error', (event) => {
   reportError(event.error ?? event.message, 'window.error')
