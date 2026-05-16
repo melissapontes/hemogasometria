@@ -824,6 +824,14 @@ export function AnimalDetailsPage() {
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
+
+    // DEBUG TEMPORÁRIO — remover após confirmar que funciona no celular
+    if (!file) {
+      window.alert('[DEBUG] handleFileChange disparou, mas file é null.')
+    } else {
+      window.alert(`[DEBUG] Arquivo: ${file.name} | Tipo: ${file.type || '(vazio)'} | Tamanho: ${file.size}`)
+    }
+
     setPendingReviewValues(null)
     setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
     setPendingSourceFileName(null)
@@ -838,9 +846,9 @@ export function AnimalDetailsPage() {
 
     const validation = validateFile(file)
     if (!validation.valid) {
+      window.alert(`[DEBUG] Validação falhou: ${validation.error}`)
       setSelectedFile(null)
       setFileError(validation.error)
-      // Abre o dialog mesmo com erro para o usuário ver o feedback
       setIsExtractDialogOpen(true)
       return
     }
@@ -1510,22 +1518,32 @@ export function AnimalDetailsPage() {
             </p>
           )}
 
-          {/* Label nativa envolvendo o input de arquivo.
-              Funciona em TODOS os browsers mobile sem .click() programático.
-              Ao tocar, o browser abre o seletor de arquivos nativamente.
-              Quando o usuário volta com o arquivo, handleFileChange abre o dialog. */}
-          <label
-            className="flex w-full cursor-pointer items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
-            style={accentBtnStyle}
-          >
+          {/* Botão de upload: o input file fica transparente cobrindo toda
+              a área do botão. O usuário toca DIRETAMENTE no input (não na label).
+              Isso é o pattern mais confiável para mobile — não depende de
+              associação label→input que pode falhar em browsers Android. */}
+          <div className="relative w-full sm:w-auto">
             <input
               accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
               type="file"
-              className="sr-only"
               onChange={handleFileChange}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                opacity: 0,
+                cursor: 'pointer',
+                zIndex: 10,
+              }}
             />
-            Extrair novo documento
-          </label>
+            <div
+              className="flex w-full items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition sm:w-auto"
+              style={accentBtnStyle}
+            >
+              Extrair novo documento
+            </div>
+          </div>
 
           {/* Feedback de erro visível fora do dialog */}
           {fileError && !isExtractDialogOpen ? (
