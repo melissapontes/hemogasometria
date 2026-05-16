@@ -1559,15 +1559,15 @@ export function AnimalDetailsPage() {
           ) : (
             <>
               <label
-                className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
+                className="relative inline-flex w-full cursor-pointer items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
                 style={accentBtnStyle}
                 onClick={() => logStep('label:clicked')}
               >
                 Extrair novo documento
                 <input
                   accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
-                  className="sr-only"
                   type="file"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   onChange={handleFileChange}
                 />
               </label>
