@@ -18,6 +18,7 @@ import {
 } from '../../components/ui'
 import { getAnimalTypeName, isAnimalsLegacySchemaError, normalizeAnimal } from '../../lib/animal-utils'
 import { resolveFileMimeType, validateFile } from '../../lib/file-validation'
+import { logStep } from '../../lib/upload-logger'
 import { getSpeciesDefaultReferences, mergeWithDefaults } from '../../lib/species-references'
 import { getSpeciesTheme } from '../../lib/species-themes'
 import { clearStoredAuthSession, supabase } from '../../lib/supabase'
@@ -823,7 +824,18 @@ export function AnimalDetailsPage() {
 
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    logStep('handleFileChange:start', { ua: navigator.userAgent.slice(0, 80) })
+
     const file = event.target.files?.[0] ?? null
+    logStep('handleFileChange:got_file', {
+      isNull: file === null,
+      name: file?.name,
+      type: file?.type || '(vazio)',
+      resolvedType: file ? resolveFileMimeType(file) : null,
+      size: file?.size,
+      filesLength: event.target.files?.length,
+    })
+
     setPendingReviewValues(null)
     setPendingReviewReferences(EMPTY_EXTRACTED_REFERENCES)
     setPendingSourceFileName(null)
@@ -831,12 +843,15 @@ export function AnimalDetailsPage() {
     setReviewDraftValues(buildDraftValues(EMPTY_EXTRACTED_VALUES))
 
     if (!file) {
+      logStep('handleFileChange:no_file')
       setSelectedFile(null)
       setFileError(null)
       return
     }
 
     const validation = validateFile(file)
+    logStep('handleFileChange:validation', { valid: validation.valid, error: validation.valid ? null : validation.error })
+
     if (!validation.valid) {
       setSelectedFile(null)
       setFileError(validation.error)
@@ -844,6 +859,7 @@ export function AnimalDetailsPage() {
       return
     }
 
+    logStep('handleFileChange:opening_dialog')
     setSelectedFile(file)
     setFileError(null)
     setIsExtractDialogOpen(true)
@@ -1509,32 +1525,19 @@ export function AnimalDetailsPage() {
             </p>
           )}
 
-          {/* Botão de upload: o input file fica transparente cobrindo toda
-              a área do botão. O usuário toca DIRETAMENTE no input (não na label).
-              Isso é o pattern mais confiável para mobile — não depende de
-              associação label→input que pode falhar em browsers Android. */}
-          <div className="relative w-full sm:w-auto">
+          <label
+            className="inline-flex w-full cursor-pointer items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
+            style={accentBtnStyle}
+            onClick={() => logStep('label:clicked')}
+          >
+            Extrair novo documento
             <input
               accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+              className="sr-only"
               type="file"
               onChange={handleFileChange}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                opacity: 0,
-                cursor: 'pointer',
-                zIndex: 10,
-              }}
             />
-            <div
-              className="flex w-full items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition sm:w-auto"
-              style={accentBtnStyle}
-            >
-              Extrair novo documento
-            </div>
-          </div>
+          </label>
 
           {/* Feedback de erro visível fora do dialog */}
           {fileError && !isExtractDialogOpen ? (

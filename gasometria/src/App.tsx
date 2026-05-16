@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { Card, CardBody } from './components/ui'
 import { useAuth } from './auth/AuthProvider'
+import { DebugLogViewer } from './components/DebugLogViewer'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AnimalDetailsPage } from './pages/animal-details'
 import { DashboardPage } from './pages/dashboard'
@@ -40,6 +41,8 @@ function PublicRoute({ children }: PublicRouteProps) {
 
 export function App() {
   return (
+    <>
+    <DebugLogViewer />
     <Routes>
       <Route
         path="/login"
@@ -79,6 +82,7 @@ export function App() {
       <Route path="/references" element={<ReferencesPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </>
   )
 }
 
