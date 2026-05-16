@@ -1,12 +1,16 @@
 import { useState } from 'react'
+import { useAuth } from '../auth/AuthProvider'
 import { clearLogs, getLogs, logsAsText } from '../lib/upload-logger'
 import { reportError } from '../lib/error-reporter'
 
+const ALLOWED_EMAIL = 'melissa.pontes@gmail.com'
+
 export function DebugLogViewer() {
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
   const [sent, setSent] = useState(false)
 
-  if (!new URLSearchParams(window.location.search).has('debug')) return null
+  if (user?.email !== ALLOWED_EMAIL) return null
 
   async function handleSend() {
     const text = logsAsText()
