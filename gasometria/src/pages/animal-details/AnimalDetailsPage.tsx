@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/AuthProvider'
@@ -840,6 +840,8 @@ export function AnimalDetailsPage() {
     if (!validation.valid) {
       setSelectedFile(null)
       setFileError(validation.error)
+      // Abre o dialog mesmo com erro para o usuário ver o feedback
+      setIsExtractDialogOpen(true)
       return
     }
 
@@ -1116,7 +1118,7 @@ export function AnimalDetailsPage() {
   const accent = speciesTheme?.accent ?? '#a78bfa'
   const chartColor = speciesTheme?.chartColor ?? accent
   const accentBtnStyle = { background: `${accent}55`, border: `1px solid ${accent}99` }
-  const fileInputRef = useRef<HTMLInputElement>(null)
+
 
   return (
     <PageContainer
@@ -1130,18 +1132,6 @@ export function AnimalDetailsPage() {
       overlay={speciesTheme ? { background: 'linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.82) 100%)' } : undefined}
     >
 
-      {/* Input de arquivo FORA de qualquer Dialog — nunca é desmontado.
-          No mobile, o seletor de arquivos (câmera/galeria) tira o foco da página;
-          se o input estivesse dentro de um Radix Dialog, o dialog fecharia
-          e desmontaria o input antes do onChange disparar. */}
-      <input
-        ref={fileInputRef}
-        accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
-        type="file"
-        style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
-        onChange={handleFileChange}
-        tabIndex={-1}
-      />
 
       <section className="mb-4 border-b border-white/20 pb-4">
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -1520,26 +1510,27 @@ export function AnimalDetailsPage() {
             </p>
           )}
 
-          <button
-            className="w-full rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
-            type="button"
+          {/* Label nativa envolvendo o input de arquivo.
+              Funciona em TODOS os browsers mobile sem .click() programático.
+              Ao tocar, o browser abre o seletor de arquivos nativamente.
+              Quando o usuário volta com o arquivo, handleFileChange abre o dialog. */}
+          <label
+            className="flex w-full cursor-pointer items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] sm:w-auto"
             style={accentBtnStyle}
-            onClick={() => {
-              setSelectedFile(null)
-              setFileError(null)
-              // Abre o seletor de arquivo diretamente (sem dialog).
-              // O dialog só abre DEPOIS que o arquivo é selecionado
-              // via handleFileChange → setIsExtractDialogOpen(true).
-              // Isso evita que o Radix Dialog feche e desmonte o input
-              // quando o seletor de arquivos do celular abre.
-              if (fileInputRef.current) {
-                fileInputRef.current.value = ''
-                fileInputRef.current.click()
-              }
-            }}
           >
+            <input
+              accept=".pdf,.jpg,.jpeg,.png,.webp,image/*"
+              type="file"
+              className="sr-only"
+              onChange={handleFileChange}
+            />
             Extrair novo documento
-          </button>
+          </label>
+
+          {/* Feedback de erro visível fora do dialog */}
+          {fileError && !isExtractDialogOpen ? (
+            <p className="mt-2 rounded-xl bg-red-900/30 px-4 py-2 text-sm text-red-300">{fileError}</p>
+          ) : null}
         </section>
       ) : null}
 

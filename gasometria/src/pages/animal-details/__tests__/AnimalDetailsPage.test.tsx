@@ -63,50 +63,49 @@ function renderPage() {
   )
 }
 
+function findExtractLabel(): HTMLLabelElement | undefined {
+  return Array.from(document.querySelectorAll('label')).find(
+    (l) => l.textContent?.includes('Extrair novo documento'),
+  )
+}
+
 // ── Testes ─────────────────────────────────────────────────────────────────
 
-describe('AnimalDetailsPage — input de arquivo', () => {
+describe('AnimalDetailsPage — input de arquivo (mobile-safe)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('input[type=file] está sempre no DOM (fora do dialog)', async () => {
+  it('botão "Extrair novo documento" é um <label> contendo input[type=file]', async () => {
     renderPage()
 
     await waitFor(() => {
-      const fileInput = document.querySelector('input[type="file"]')
-      expect(fileInput).not.toBeNull()
+      const label = findExtractLabel()
+      expect(label).toBeDefined()
+      const input = label!.querySelector('input[type="file"]')
+      expect(input).not.toBeNull()
     })
   })
 
-  it('input[type=file] aceita os formatos corretos incluindo image/*', async () => {
+  it('input[type=file] dentro do label aceita formatos corretos incluindo image/*', async () => {
     renderPage()
 
     await waitFor(() => {
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
-      expect(input).not.toBeNull()
-      expect(input!.accept).toBe('.pdf,.jpg,.jpeg,.png,.webp,image/*')
+      const label = findExtractLabel()
+      expect(label).toBeDefined()
+      const input = label!.querySelector('input[type="file"]') as HTMLInputElement
+      expect(input.accept).toBe('.pdf,.jpg,.jpeg,.png,.webp,image/*')
     })
   })
 
-  it('input[type=file] está oculto visualmente (não interfere no layout)', async () => {
+  it('input[type=file] está oculto com sr-only', async () => {
     renderPage()
 
     await waitFor(() => {
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
-      expect(input).not.toBeNull()
-      expect(input!.style.position).toBe('absolute')
-      expect(input!.style.overflow).toBe('hidden')
-    })
-  })
-
-  it('input[type=file] não é focável via tab (tabIndex=-1)', async () => {
-    renderPage()
-
-    await waitFor(() => {
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement | null
-      expect(input).not.toBeNull()
-      expect(input!.tabIndex).toBe(-1)
+      const label = findExtractLabel()
+      expect(label).toBeDefined()
+      const input = label!.querySelector('input[type="file"]') as HTMLInputElement
+      expect(input.className).toContain('sr-only')
     })
   })
 })
