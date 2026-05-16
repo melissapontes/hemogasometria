@@ -9,7 +9,8 @@ import { reportError } from './lib/error-reporter'
 
 // DevTools mobile — ativar via ?debug=true na URL
 if (new URLSearchParams(window.location.search).has('debug')) {
-  import('eruda').then((eruda) => eruda.default.init())
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  void (import('eruda') as Promise<any>).then((m) => m.default.init())
 }
 
 window.addEventListener('error', (event) => {
