@@ -60,15 +60,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     loadSession()
 
+    let signOutTimer: ReturnType<typeof setTimeout> | null = null
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
-      setIsLoading(false)
+      if (nextSession !== null) {
+        // Sessão restaurada — cancela qualquer sign-out pendente
+        if (signOutTimer) {
+          clearTimeout(signOutTimer)
+          signOutTimer = null
+        }
+        setSession(nextSession)
+        setIsLoading(false)
+      } else {
+        // Debounce: aguarda 2s antes de limpar sessão.
+        // No Android, o file picker dispara visibilitychange que gera
+        // um SIGNED_OUT temporário antes do token ser restaurado.
+        signOutTimer = setTimeout(() => {
+          if (isMounted) {
+            setSession(null)
+            setIsLoading(false)
+          }
+          signOutTimer = null
+        }, 2000)
+      }
     })
 
     return () => {
       isMounted = false
+      if (signOutTimer) clearTimeout(signOutTimer)
       subscription.unsubscribe()
     }
   }, [])
