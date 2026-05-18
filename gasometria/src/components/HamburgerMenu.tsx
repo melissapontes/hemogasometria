@@ -37,7 +37,7 @@ export function HamburgerMenu({ onSignOut }: { onSignOut: () => Promise<void> })
 
   useEffect(() => {
     if (isOpen && user) void loadProfile()
-  }, [isOpen, user])
+  }, [isOpen, user?.id])
 
   async function loadProfile() {
     if (!user) return

@@ -94,10 +94,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
+  const sessionUser = session?.user ?? null
+  const userId = sessionUser?.id ?? null
+  // Mantém referência estável enquanto o id do usuário não muda.
+  // Sem isso, TOKEN_REFRESHED gera novo objeto user e desmonta a árvore protegida.
+  const stableUser = useMemo(() => sessionUser, [userId])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
-      user: session?.user ?? null,
+      user: stableUser,
       isLoading,
       async signIn(email: string, password: string) {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -124,7 +130,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await supabase.auth.signOut()
       },
     }),
-    [isLoading, session],
+    [isLoading, session, stableUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

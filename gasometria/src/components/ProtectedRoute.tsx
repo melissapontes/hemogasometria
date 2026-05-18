@@ -19,7 +19,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (!user) return
     void checkTermsAccepted()
-  }, [user])
+    // Depende de user?.id (estável) e não do objeto user, para evitar
+    // refetch a cada TOKEN_REFRESHED disparado pela troca de aba.
+  }, [user?.id])
 
   async function checkTermsAccepted() {
     setTermsStatus('loading')
